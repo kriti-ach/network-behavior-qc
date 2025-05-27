@@ -7,8 +7,9 @@ from utils.utils import (
     initialize_qc_csvs,
     extract_task_name,
     update_qc_csv,
+    get_task_metrics
 )
-from utils.task_metrics import get_task_metrics
+
 from utils.globals import TASKS
 
 folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner/")
