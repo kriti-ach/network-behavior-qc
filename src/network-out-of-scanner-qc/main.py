@@ -32,6 +32,6 @@ for subject_folder in glob.glob(str(folder_path / "*")):
                 try:
                     df = pd.read_csv(file)
                     metrics = get_task_metrics(df, task_name)
-                    update_qc_csv(task_name, subject_id, metrics)
+                    update_qc_csv(output_path, task_name, subject_id, metrics)
                 except Exception as e:
                     print(f"Error processing {task_name} for subject {subject_id}: {str(e)}")

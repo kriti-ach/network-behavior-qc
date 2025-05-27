@@ -8,17 +8,38 @@ from utils.globals import (
     TASKS
 )
 
+def get_task_columns(task_name):
+    """
+    Define columns for each task's QC CSV.
+    
+    Args:
+        task_name (str): Name of the task
+        
+    Returns:
+        list: List of column names for the task
+    """
+    if 'directed_forgetting' in task_name and 'flanker' in task_name:
+        columns = ['subject_id']
+        for df_cond in ['con', 'pos', 'neg']:
+            for flanker_cond in ['congruent', 'incongruent']:
+                columns.extend([
+                    f'{df_cond}_{flanker_cond}_acc',
+                    f'{df_cond}_{flanker_cond}_rt'
+                ])
+        return columns
+    else:
+        raise ValueError(f"Unknown task: {task_name}")
+
 def initialize_qc_csvs(tasks, output_path):
     """
     Initialize QC CSV files for all tasks.
     
     Args:
         tasks (list): List of task names
+        output_path (Path): Path to save QC CSVs
     """
     for task in tasks:
-        # Get example metrics to determine columns
-        example_metrics = get_task_metrics(pd.DataFrame(), task)
-        columns = ['subject_id'] + list(example_metrics.keys())
+        columns = get_task_columns(task)
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
 
@@ -40,6 +61,13 @@ def extract_task_name(filename):
 def filter_to_test_trials(df, task_name):
     """
     Filter the dataframe to only include test trials.
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        task_name (str): Name of the task
+        
+    Returns:
+        pd.DataFrame: Filtered dataframe
     """
     return df[df['trial_id'] == 'test_trial']
 
@@ -48,6 +76,7 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
     Update the QC CSV file for a specific task with new data.
     
     Args:
+        output_path (Path): Path to save QC CSVs
         task_name (str): Name of the task
         subject_id (str): Subject ID
         metrics (dict): Dictionary of metrics to add
@@ -64,30 +93,6 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found") 
 
-def calculate_df_with_flanker_metrics(df, task1, task2):
-    """
-    Calculate RT and accuracy metrics for dual tasks.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing dual task data
-        task1 (str): Name of first task (e.g., 'directed_forgetting')
-        task2 (str): Name of second task (e.g., 'flanker')
-        
-    Returns:
-        dict: Dictionary containing RT and accuracy metrics for each condition combination
-    """
-    metrics = {}
-    
-    # Example for directed forgetting + flanker
-    if task1 == 'directed_forgetting' and task2 == 'flanker':
-        for df_cond in ['con', 'pos', 'neg']:
-            for flanker_cond in ['congruent', 'incongruent']:
-                mask = (df['directed_forgetting_condition'] == df_cond) & (df['flanker_condition'] == flanker_cond)
-                metrics[f'{df_cond}_{flanker_cond}_acc'] = df[mask]['correct'].mean()
-                metrics[f'{df_cond}_{flanker_cond}_rt'] = df[mask]['rt'].mean()
-    
-    return metrics
-
 def get_task_metrics(df, task_name):
     """
     Main function to get metrics for any task.
@@ -99,7 +104,30 @@ def get_task_metrics(df, task_name):
     Returns:
         dict: Dictionary containing task-specific metrics
     """
+    # First filter to test trials
+    df = filter_to_test_trials(df, task_name)
+    
     if 'directed_forgetting' in task_name and 'flanker' in task_name:
-        return calculate_df_with_flanker_metrics(df, 'directed_forgetting', 'flanker')
+        return calculate_df_with_flanker_metrics(df)
     else:
         raise ValueError(f"Unknown task: {task_name}") 
+    
+def calculate_df_with_flanker_metrics(df):
+    """
+    Calculate RT and accuracy metrics for directed forgetting + flanker task.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing task data
+        
+    Returns:
+        dict: Dictionary containing RT and accuracy metrics for each condition combination
+    """
+    metrics = {}
+    
+    for df_cond in ['con', 'pos', 'neg']:
+        for flanker_cond in ['congruent', 'incongruent']:
+            mask = (df['directed_forgetting_condition'] == df_cond) & (df['flanker_condition'] == flanker_cond)
+            metrics[f'{df_cond}_{flanker_cond}_acc'] = df[mask]['correct'].mean()
+            metrics[f'{df_cond}_{flanker_cond}_rt'] = df[mask]['rt'].mean()
+    
+    return metrics
