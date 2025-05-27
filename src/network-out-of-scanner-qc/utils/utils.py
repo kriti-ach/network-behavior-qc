@@ -8,6 +8,19 @@ from utils.globals import (
     TASKS
 )
 
+def initialize_qc_csvs(tasks, output_path):
+    """
+    Initialize QC CSV files for all tasks.
+    
+    Args:
+        tasks (list): List of task names
+        output_path (Path): Path to save QC CSVs
+    """
+    for task in tasks:
+        columns = get_task_columns(task)
+        df = pd.DataFrame(columns=columns)
+        df.to_csv(output_path / f"{task}_qc.csv", index=False)
+
 def get_task_columns(task_name):
     """
     Define columns for each task's QC CSV.
@@ -27,21 +40,6 @@ def get_task_columns(task_name):
                     f'{df_cond}_{flanker_cond}_rt'
                 ])
         return columns
-    else:
-        raise ValueError(f"Unknown task: {task_name}")
-
-def initialize_qc_csvs(tasks, output_path):
-    """
-    Initialize QC CSV files for all tasks.
-    
-    Args:
-        tasks (list): List of task names
-        output_path (Path): Path to save QC CSVs
-    """
-    for task in tasks:
-        columns = get_task_columns(task)
-        df = pd.DataFrame(columns=columns)
-        df.to_csv(output_path / f"{task}_qc.csv", index=False)
 
 def extract_task_name(filename):
     """
@@ -109,8 +107,6 @@ def get_task_metrics(df, task_name):
     
     if 'directed_forgetting' in task_name and 'flanker' in task_name:
         return calculate_df_with_flanker_metrics(df)
-    else:
-        raise ValueError(f"Unknown task: {task_name}") 
     
 def calculate_df_with_flanker_metrics(df):
     """
@@ -127,7 +123,7 @@ def calculate_df_with_flanker_metrics(df):
     for df_cond in ['con', 'pos', 'neg']:
         for flanker_cond in ['congruent', 'incongruent']:
             mask = (df['directed_forgetting_condition'] == df_cond) & (df['flanker_condition'] == flanker_cond)
-            metrics[f'{df_cond}_{flanker_cond}_acc'] = df[mask]['correct'].mean()
+            metrics[f'{df_cond}_{flanker_cond}_acc'] = df[mask]['correct_trial'].mean()
             metrics[f'{df_cond}_{flanker_cond}_rt'] = df[mask]['rt'].mean()
     
     return metrics
