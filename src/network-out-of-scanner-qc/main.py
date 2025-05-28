@@ -10,13 +10,13 @@ from utils.utils import (
     get_task_metrics
 )
 
-from utils.globals import TASKS
+from utils.globals import SINGLE_TASKS, DUAL_TASKS
 
 folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner/")
 output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner/qc/")
 
 # Initialize QC CSVs for all tasks
-initialize_qc_csvs(TASKS, output_path)
+initialize_qc_csvs(SINGLE_TASKS + DUAL_TASKS, output_path)
 
 for subject_folder in glob.glob(str(folder_path / "*")):
     subject_id = Path(subject_folder).name

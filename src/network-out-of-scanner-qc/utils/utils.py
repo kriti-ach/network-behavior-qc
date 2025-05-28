@@ -5,7 +5,10 @@ import re
 import numpy as np
 
 from utils.globals import (
-    TASKS
+    DUAL_TASKS,
+    SINGLE_TASKS,
+    FLANKER_CONDITIONS,
+    DIRECTED_FORGETTING_CONDITIONS
 )
 
 def initialize_qc_csvs(tasks, output_path):
@@ -33,8 +36,8 @@ def get_task_columns(task_name):
     """
     if 'directed_forgetting' in task_name and 'flanker' in task_name:
         columns = ['subject_id']
-        for df_cond in ['con', 'pos', 'neg']:
-            for flanker_cond in ['congruent', 'incongruent']:
+        for df_cond in DIRECTED_FORGETTING_CONDITIONS:
+            for flanker_cond in FLANKER_CONDITIONS:
                 columns.extend([
                     f'{df_cond}_{flanker_cond}_acc',
                     f'{df_cond}_{flanker_cond}_rt'
@@ -104,26 +107,64 @@ def get_task_metrics(df, task_name):
     """
     # First filter to test trials
     df = filter_to_test_trials(df, task_name)
+
+    # Determine if it's a dual task and get conditions
+    is_dual_task = any(task in task_name for task in DUAL_TASKS)
     
-    if 'directed_forgetting' in task_name and 'flanker' in task_name:
-        return calculate_df_with_flanker_metrics(df)
+    if is_dual_task:
+        # For dual tasks, we need both sets of conditions
+        if 'directed_forgetting' in task_name and 'flanker' in task_name:
+            conditions = {
+                'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
+                'flanker': FLANKER_CONDITIONS
+            }
+            condition_columns = {
+                'directed_forgetting': 'directed_forgetting_condition',
+                'flanker': 'flanker_condition'
+            }
+    else:
+        # For single tasks, we only need one set of conditions
+        if 'directed_forgetting' in task_name:
+            conditions = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
+            condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
+        elif 'flanker' in task_name:
+            conditions = {'flanker': FLANKER_CONDITIONS}
+            condition_columns = {'flanker': 'flanker_condition'}
     
-def calculate_df_with_flanker_metrics(df):
+    return calculate_metrics(df, conditions, condition_columns, is_dual_task)
+
+def calculate_metrics(df, conditions, condition_columns, is_dual_task):
     """
-    Calculate RT and accuracy metrics for directed forgetting + flanker task.
+    Calculate RT and accuracy metrics for any task.
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
+        conditions (dict): Dictionary of task names and their conditions
+        condition_columns (dict): Dictionary of task names and their condition column names
+        is_dual_task (bool): Whether this is a dual task
         
     Returns:
-        dict: Dictionary containing RT and accuracy metrics for each condition combination
+        dict: Dictionary containing task-specific metrics
     """
     metrics = {}
     
-    for df_cond in ['con', 'pos', 'neg']:
-        for flanker_cond in ['congruent', 'incongruent']:
-            mask = (df['directed_forgetting_condition'] == df_cond) & (df['flanker_condition'] == flanker_cond)
-            metrics[f'{df_cond}_{flanker_cond}_acc'] = df[mask]['correct_trial'].mean()
-            metrics[f'{df_cond}_{flanker_cond}_rt'] = df[mask]['rt'].mean()
+    if is_dual_task:
+        # For dual tasks, iterate through all combinations of conditions
+        task1, task2 = list(conditions.keys())
+        for cond1 in conditions[task1]:
+            for cond2 in conditions[task2]:
+                mask = (
+                    (df[condition_columns[task1]] == cond1) & 
+                    (df[condition_columns[task2]] == cond2)
+                )
+                metrics[f'{cond1}_{cond2}_acc'] = df[mask]['correct_trial'].mean()
+                metrics[f'{cond1}_{cond2}_rt'] = df[mask]['rt'].mean()
+    else:
+        # For single tasks, just iterate through conditions
+        task = list(conditions.keys())[0]
+        for cond in conditions[task]:
+            mask = (df[condition_columns[task]] == cond)
+            metrics[f'{cond}_acc'] = df[mask]['correct_trial'].mean()
+            metrics[f'{cond}_rt'] = df[mask]['rt'].mean()
     
     return metrics
