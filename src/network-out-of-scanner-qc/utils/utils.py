@@ -62,8 +62,15 @@ def get_task_columns(task_name, sample_df=None):
         columns = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
         condition_columns = {'cued_task_switching': 'cued_task_switching_condition'}
         return columns
+    elif 'directed_forgetting' in task_name:
+        columns = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
+        condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
+        return columns
+    elif 'flanker' in task_name:
+        columns = {'flanker': FLANKER_CONDITIONS}
+        condition_columns = {'flanker': 'flanker_condition'}
     else:
-        raise ValueError(f"Unknown task: {task_name}")
+        print(f"Unknown task: {task_name}")
 
 def extract_task_name(filename):
     """
