@@ -26,15 +26,16 @@ def initialize_qc_csvs(tasks, output_path):
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
 
-def get_task_columns(task_name):
+def get_cued_spatialts_contrasts(df):
+    """
+    Get unique, non-empty, non-na contrast names from the task_switch column.
+    """
+    return [v for v in df['task_switch'].unique() if pd.notna(v) and v != '']
+
+def get_task_columns(task_name, sample_df=None):
     """
     Define columns for each task's QC CSV.
-    
-    Args:
-        task_name (str): Name of the task
-        
-    Returns:
-        list: List of column names for the task
+    If sample_df is provided, use it for dynamic contrast extraction (e.g., cued+spatialts).
     """
     if 'directed_forgetting' in task_name and 'flanker' in task_name:
         columns = ['subject_id']
@@ -45,6 +46,24 @@ def get_task_columns(task_name):
                     f'{df_cond}_{flanker_cond}_rt'
                 ])
         return columns
+    elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+        if sample_df is None:
+            raise ValueError('sample_df must be provided for cued+spatialts task')
+        contrasts = get_cued_spatialts_contrasts(sample_df)
+        columns = ['subject_id']
+        for contrast in contrasts:
+            columns.extend([f'{contrast}_acc', f'{contrast}_rt'])
+        return columns
+    elif 'spatial_task_switching' in task_name:
+        columns = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
+        condition_columns = {'spatial_task_switching': 'spatial_task_switching_condition'}
+        return columns
+    elif 'cued_task_switching' in task_name:
+        columns = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
+        condition_columns = {'cued_task_switching': 'cued_task_switching_condition'}
+        return columns
+    else:
+        raise ValueError(f"Unknown task: {task_name}")
 
 def extract_task_name(filename):
     """
@@ -110,6 +129,15 @@ def get_task_metrics(df, task_name):
     # First filter to test trials
     df = filter_to_test_trials(df, task_name)
 
+    if 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+        contrasts = get_cued_spatialts_contrasts(df)
+        metrics = {}
+        for contrast in contrasts:
+            mask = (df['task_switch'] == contrast)
+            metrics[f'{contrast}_acc'] = df[mask]['correct_trial'].mean()
+            metrics[f'{contrast}_rt'] = df[mask]['rt'].mean()
+        return metrics
+
     # Determine if it's a dual task and get conditions
     is_dual_task = any(task in task_name for task in DUAL_TASKS)
     
@@ -123,15 +151,6 @@ def get_task_metrics(df, task_name):
             condition_columns = {
                 'directed_forgetting': 'directed_forgetting_condition',
                 'flanker': 'flanker_condition'
-            }
-        elif 'spatial_task_switching' in task_name and 'cued_task_switching' in task_name:
-            conditions = {
-                'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS,
-                'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS
-            }
-            condition_columns = {
-                'spatial_task_switching': 'spatial_task_switching_condition',
-                'cued_task_switching': 'cued_task_switching_condition'
             }
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
             conditions = {
