@@ -47,30 +47,31 @@ def get_task_columns(task_name, sample_df=None):
                 ])
         return columns
     elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
-        if sample_df is None:
-            raise ValueError('sample_df must be provided for cued+spatialts task')
-        contrasts = get_cued_spatialts_contrasts(sample_df)
-        columns = ['subject_id']
-        for contrast in contrasts:
-            columns.extend([f'{contrast}_acc', f'{contrast}_rt'])
-        return columns
+        # Do not create columns at init; handled dynamically in main
+        return None
     elif 'spatial_task_switching' in task_name:
-        columns = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
-        condition_columns = {'spatial_task_switching': 'spatial_task_switching_condition'}
+        columns = ['subject_id']
+        for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
+            columns.extend([f'{cond}_acc', f'{cond}_rt'])
         return columns
     elif 'cued_task_switching' in task_name:
-        columns = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
-        condition_columns = {'cued_task_switching': 'cued_task_switching_condition'}
+        columns = ['subject_id']
+        for cond in CUED_TASK_SWITCHING_CONDITIONS:
+            columns.extend([f'{cond}_acc', f'{cond}_rt'])
         return columns
     elif 'directed_forgetting' in task_name:
-        columns = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
-        condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
+        columns = ['subject_id']
+        for cond in DIRECTED_FORGETTING_CONDITIONS:
+            columns.extend([f'{cond}_acc', f'{cond}_rt'])
         return columns
     elif 'flanker' in task_name:
-        columns = {'flanker': FLANKER_CONDITIONS}
-        condition_columns = {'flanker': 'flanker_condition'}
+        columns = ['subject_id']
+        for cond in FLANKER_CONDITIONS:
+            columns.extend([f'{cond}_acc', f'{cond}_rt'])
+        return columns
     else:
         print(f"Unknown task: {task_name}")
+        return None
 
 def extract_task_name(filename):
     """
@@ -220,3 +221,11 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
             metrics[f'{cond}_rt'] = df[mask]['rt'].mean()
     
     return metrics
+
+# Helper to create cued+spatialts CSV dynamically
+def create_cued_spatialts_csv(task_name, df, output_path):
+    contrasts = get_cued_spatialts_contrasts(df)
+    columns = ['subject_id']
+    for contrast in contrasts:
+        columns.extend([f'{contrast}_acc', f'{contrast}_rt'])
+    pd.DataFrame(columns=columns).to_csv(output_path / f"{task_name}_qc.csv", index=False)
