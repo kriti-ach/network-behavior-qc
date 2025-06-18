@@ -249,14 +249,22 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
     return metrics
 
 def append_summary_rows_to_csv(csv_path):
-    df = pd.read_csv(csv_path)
-    if df.empty:
+    # Skip if file is empty or has no columns
+    try:
+        df = pd.read_csv(csv_path)
+    except pd.errors.EmptyDataError:
         return
-    if not df.select_dtypes(include=['number']).columns.any():
+    if df.empty or len(df.columns) < 4:
         return
-    # if df has no numeric columns, return
-    df.loc['mean'] = df.mean(numeric_only=True)
-    df.loc['std'] = df.std(numeric_only=True)
-    df.loc['max'] = df.max(numeric_only=True, axis=1)
-    df.loc['min'] = df.min(numeric_only=True, axis=1)
+    # Only operate if there are at least 4 columns
+    stats_cols = df.columns[3:]
+    summary = {
+        'mean': [np.nan, np.nan, np.nan] + [df[col].mean() for col in stats_cols],
+        'std':  [np.nan, np.nan, np.nan] + [df[col].std() for col in stats_cols],
+        'max':  [np.nan, np.nan, np.nan] + [df[col].max() for col in stats_cols],
+        'min':  [np.nan, np.nan, np.nan] + [df[col].min() for col in stats_cols],
+    }
+    for stat, values in summary.items():
+        row = pd.Series(values, index=df.columns, name=stat)
+        df = pd.concat([df, row.to_frame().T], ignore_index=True)
     df.to_csv(csv_path, index=False)
