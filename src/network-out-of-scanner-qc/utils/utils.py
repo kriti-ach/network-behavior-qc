@@ -191,9 +191,12 @@ def get_task_metrics(df, task_name):
             print(f'contrasts: {contrasts}')
             metrics = {}
             for contrast in contrasts:
-                mask = (df['task_switch'] == contrast)
-                metrics[f'{contrast}_acc'] = df[mask]['correct_trial'].mean()
-                metrics[f'{contrast}_rt'] = df[mask]['rt'].mean()
+                mask_acc = (df['task_switch'] == contrast)
+                mask_rt = (df['task_switch'] == contrast) & (df['acc'] == 1)
+                # metrics[f'{contrast}_acc'] = df[mask]['correct_trial'].mean()
+                # metrics[f'{contrast}_rt'] = df[mask]['rt'].mean()
+                metrics[f'{contrast}_acc'] = df[mask_acc]['acc'].mean()
+                metrics[f'{contrast}_rt'] = df[mask_rt]['response_time'].mean() 
             print(f'metrics: {metrics}')
             return metrics
     else:
@@ -237,15 +240,19 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
                     (df[condition_columns[task1]] == cond1) & 
                     (df[condition_columns[task2]] == cond2)
                 )
-                metrics[f'{cond1}_{cond2}_acc'] = df[mask]['correct_trial'].mean()
-                metrics[f'{cond1}_{cond2}_rt'] = df[mask]['rt'].mean()
+                mask_acc = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2)
+                mask_rt = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2) & (df['acc'] == 1)
+                metrics[f'{cond1}_{cond2}_acc'] = df[mask_acc]['acc'].mean()
+                metrics[f'{cond1}_{cond2}_rt'] = df[mask_rt]['response_time'].mean()
     else:
         # For single tasks, just iterate through conditions
         task = list(conditions.keys())[0]
         for cond in conditions[task]:
             mask = (df[condition_columns[task]] == cond)
-            metrics[f'{cond}_acc'] = df[mask]['correct_trial'].mean()
-            metrics[f'{cond}_rt'] = df[mask]['rt'].mean()
+            mask_acc = (df[condition_columns[task]] == cond)
+            mask_rt = (df[condition_columns[task]] == cond) & (df['acc'] == 1)
+            metrics[f'{cond}_acc'] = df[mask_acc]['acc'].mean()
+            metrics[f'{cond}_rt'] = df[mask_rt]['response_time'].mean()
     
     return metrics
 
