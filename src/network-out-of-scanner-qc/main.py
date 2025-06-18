@@ -5,14 +5,15 @@ import re
 
 from utils.utils import (
     initialize_qc_csvs,
-    extract_task_name,
+    extract_task_name_out_of_scanner,
+    extract_task_name_fmri,
     update_qc_csv,
     get_task_metrics
 )
 
 from utils.globals import SINGLE_TASKS, DUAL_TASKS
 
-folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/network_fmri_raw_final_2/")
+folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/validation_BIDS/")
 output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/qc_by_task/")
 
 # Initialize QC CSVs for all tasks
@@ -20,17 +21,21 @@ initialize_qc_csvs(SINGLE_TASKS + DUAL_TASKS, output_path)
 
 for subject_folder in glob.glob(str(folder_path / "*")):
     subject_id = Path(subject_folder).name
-    if re.match(r"s\d{2,}", subject_id):
+    # if re.match(r"s\d{2,}", subject_id):
+    if re.match(r"sub-", subject_id):
         print(f"Processing Subject: {subject_id}")
 
-        for file in glob.glob(str(Path(subject_folder) / "*.csv")):
+        # for file in glob.glob(str(Path(subject_folder) / "*csv")):
+        for file in glob.glob(str(Path(subject_folder) / "ses-*" / "func" / "*.tsv")):
             filename = Path(file).name
-            task_name = extract_task_name(filename)
+            # task_name = extract_task_name_out_of_scanner(filename)
+            task_name = extract_task_name_fmri(filename)
             print(f"Processing task: {task_name}")
             
             if task_name:
                 try:
-                    df = pd.read_csv(file)
+                    # df = pd.read_csv(file)
+                    df = pd.read_csv(file, sep='\t')
                     metrics = get_task_metrics(df, task_name)
                     update_qc_csv(output_path, task_name, subject_id, metrics)
                 except Exception as e:

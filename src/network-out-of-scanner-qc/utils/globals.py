@@ -1,4 +1,4 @@
-SINGLE_TASKS = [
+SINGLE_TASKS_OUT_OF_SCANNER = [
     "cued_task_switching_single_task_network",
     "directed_forgetting_single_task_network",
     "flanker_single_task_network",
@@ -9,7 +9,7 @@ SINGLE_TASKS = [
     "stop_signal_single_task_network"
 ]
 
-DUAL_TASKS = [
+DUAL_TASKS_OUT_OF_SCANNER = [
     "cued_task_switching_with_directed_forgetting",
     "directed_forgetting_with_flanker",
     "directed_forgetting_with_shape_matching",
@@ -38,6 +38,30 @@ DUAL_TASKS = [
     "stop_signal_with_shape_matching",
     "stop_signal_with_spatial_task_switching",
     "stop_signal_with_go_nogo"
+]
+
+SINGLE_TASKS_FMRI = [
+    "cuedTS",
+    "directedForgetting",
+    "flanker",
+    "goNogo",
+    "nBack",
+    "spatialTS",
+    "shapeMatching",
+    "stopSignal"
+]
+
+DUAL_TASKS_FMRI = [
+    "directedForgettingWCuedTS"
+    "directedForgettingWFlanker"
+    "stopSignalWDirectedForgetting"
+    "stopSignalWFlanker"
+    "spatialTSWCuedTS"
+    "flankerWShapeMatching"
+    "cuedTSWFlanker"
+    "spatialTSWShapeMatching"
+    "nBackWShapeMatching"
+    "nBackWSpatialTS"
 ]
 
 FLANKER_CONDITIONS = ['congruent', 'incongruent']

@@ -5,8 +5,10 @@ import re
 import numpy as np
 
 from utils.globals import (
-    DUAL_TASKS,
-    SINGLE_TASKS,
+    DUAL_TASKS_OUT_OF_SCANNER,
+    SINGLE_TASKS_OUT_OF_SCANNER,
+    DUAL_TASKS_FMRI,
+    SINGLE_TASKS_FMRI,
     FLANKER_CONDITIONS,
     DIRECTED_FORGETTING_CONDITIONS,
     SPATIAL_TASK_SWITCHING_CONDITIONS,
@@ -38,7 +40,7 @@ def get_task_columns(task_name, sample_df=None):
     If sample_df is provided, use it for dynamic contrast extraction (e.g., cued+spatialts).
     """
     if is_dual_task(task_name):
-        if 'directed_forgetting' in task_name and 'flanker' in task_name:
+        if 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
             columns = ['subject_id']
             for df_cond in DIRECTED_FORGETTING_CONDITIONS:
                 for flanker_cond in FLANKER_CONDITIONS:
@@ -47,28 +49,28 @@ def get_task_columns(task_name, sample_df=None):
                         f'{df_cond}_{flanker_cond}_rt'
                     ])
             return columns
-        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
             # Do not create columns at init; handled dynamically in main
             return None
     else:
-        if 'spatial_task_switching' in task_name:
+        if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             columns = ['subject_id']
             for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
-        elif 'cued_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             columns = ['subject_id']
-        elif 'spatial_task_switching' in task_name:
+        elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             columns = ['subject_id']
             for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
-        elif 'cued_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             columns = ['subject_id']
             for cond in CUED_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
-        elif 'directed_forgetting' in task_name:
+        elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             columns = ['subject_id']
             for cond in DIRECTED_FORGETTING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
@@ -86,9 +88,10 @@ def is_dual_task(task_name):
     """
     Check if the task is a dual task.
     """
-    return any(task in task_name for task in DUAL_TASKS)
+    # return any(task in task_name for task in DUAL_TASKS_OUT_OF_SCANNER)
+    return any(task in task_name for task in DUAL_TASKS_FMRI)
 
-def extract_task_name(filename):
+def extract_task_name_out_of_scanner(filename):
     """
     Extract task name from filename using regex pattern.
     
@@ -99,6 +102,21 @@ def extract_task_name(filename):
         str: Extracted task name or None if pattern doesn't match
     """
     match = re.match(r"s\d{2,}_(.*)\.csv", filename)
+    if match:
+        return match.group(1)
+    return None
+
+def extract_task_name_fmri(filename):
+    """
+    Extract task name from filename using regex pattern.
+    
+    Args:
+        filename (str): Name of the file
+        
+    Returns:
+        str: Extracted task name or None if pattern doesn't match
+    """
+    match = re.match(r"sub-s\d{2,}_ses-(.*)_task-(.*)_run-(.*)_events\.tsv", filename)
     if match:
         return match.group(1)
     return None
@@ -127,7 +145,7 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
         metrics (dict): Dictionary of metrics to add
     """
     qc_file = output_path / f"{task_name}_qc.csv"
-    if 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+    if 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
         create_cued_spatialts_csv(task_name, df, output_path)
         return
     try:
@@ -157,7 +175,7 @@ def get_task_metrics(df, task_name):
     
     if is_dual_task(task_name):
         # For dual tasks, we need both sets of conditions
-        if 'directed_forgetting' in task_name and 'flanker' in task_name:
+        if 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
             conditions = {
                 'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
                 'flanker': FLANKER_CONDITIONS
@@ -168,7 +186,7 @@ def get_task_metrics(df, task_name):
             }
             return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
         
-        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
             contrasts = get_cued_spatialts_contrasts(df)
             print(f'contrasts: {contrasts}')
             metrics = {}
@@ -180,16 +198,16 @@ def get_task_metrics(df, task_name):
             return metrics
     else:
         # For single tasks, we only need one set of conditions
-        if 'directed_forgetting' in task_name:
+        if 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             conditions = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
             condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
-        elif 'flanker' in task_name:
+        elif 'flanker' in task_name or 'flanker' in task_name:
             conditions = {'flanker': FLANKER_CONDITIONS}
             condition_columns = {'flanker': 'flanker_condition'}
-        elif 'spatial_task_switching' in task_name:
+        elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
             condition_columns = {'spatial_task_switching': 'spatial_task_switching_condition'}
-        elif 'cued_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
             condition_columns = {'cued_task_switching': 'cued_task_switching_condition'}
     
