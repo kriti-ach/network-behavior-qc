@@ -127,6 +127,9 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
         metrics (dict): Dictionary of metrics to add
     """
     qc_file = output_path / f"{task_name}_qc.csv"
+    if task_name == 'cued_task_switching_with_spatial_task_switching':
+        create_cued_spatialts_csv(task_name, df, output_path)
+        return
     try:
         df = pd.read_csv(qc_file)
         new_row = pd.DataFrame({
@@ -167,11 +170,13 @@ def get_task_metrics(df, task_name):
         
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
             contrasts = get_cued_spatialts_contrasts(df)
+            print(f'contrasts: {contrasts}')
             metrics = {}
             for contrast in contrasts:
                 mask = (df['task_switch'] == contrast)
                 metrics[f'{contrast}_acc'] = df[mask]['correct_trial'].mean()
                 metrics[f'{contrast}_rt'] = df[mask]['rt'].mean()
+            print(f'metrics: {metrics}')
             return metrics
     else:
         # For single tasks, we only need one set of conditions
