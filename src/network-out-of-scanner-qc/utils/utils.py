@@ -36,7 +36,7 @@ def get_task_columns(task_name, sample_df=None):
     """
     if is_dual_task(task_name):
         if 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for df_cond in DIRECTED_FORGETTING_CONDITIONS:
                 for flanker_cond in FLANKER_CONDITIONS:
                     columns.extend([
@@ -45,35 +45,35 @@ def get_task_columns(task_name, sample_df=None):
                     ])
             return columns
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
         elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in CUED_TASK_SWITCHING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
         elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in DIRECTED_FORGETTING_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
         elif 'flanker' in task_name:
-            columns = ['subject_id']
+            columns = ['subject_id', 'session', 'run']
             for cond in FLANKER_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
             return columns
@@ -131,7 +131,7 @@ def filter_to_test_trials(df, task_name):
     """
     return df[df['trial_id'] == 'test_trial']
 
-def update_qc_csv(output_path, task_name, subject_id, metrics):
+def update_qc_csv(output_path, task_name, subject_id, session, run, metrics):
     """
     Update the QC CSV file for a specific task with new data.
     
@@ -146,6 +146,8 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
         df = pd.read_csv(qc_file)
         new_row = pd.DataFrame({
             'subject_id': [subject_id],
+            'session': [session],
+            'run': [run],
             **metrics
         })
         df = pd.concat([df, new_row], ignore_index=True)
