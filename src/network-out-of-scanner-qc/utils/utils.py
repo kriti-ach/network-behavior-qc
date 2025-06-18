@@ -12,7 +12,8 @@ from utils.globals import (
     FLANKER_CONDITIONS,
     DIRECTED_FORGETTING_CONDITIONS,
     SPATIAL_TASK_SWITCHING_CONDITIONS,
-    CUED_TASK_SWITCHING_CONDITIONS
+    CUED_TASK_SWITCHING_CONDITIONS,
+    SPATIAL_WITH_CUED_CONDITIONS
 )
 
 def initialize_qc_csvs(tasks, output_path):
@@ -27,12 +28,6 @@ def initialize_qc_csvs(tasks, output_path):
         columns = get_task_columns(task)
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
-
-def get_cued_spatialts_contrasts(df):
-    """
-    Get unique, non-empty, non-na contrast names from the task_switch column.
-    """
-    return [v for v in df['task_switch'].unique() if pd.notna(v) and v != '']
 
 def get_task_columns(task_name, sample_df=None):
     """
@@ -187,17 +182,16 @@ def get_task_metrics(df, task_name):
             return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
         
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
-            contrasts = get_cued_spatialts_contrasts(df)
-            print(f'contrasts: {contrasts}')
             metrics = {}
-            for contrast in contrasts:
-                mask_acc = (df['task_switch'] == contrast)
-                mask_rt = (df['task_switch'] == contrast) & (df['acc'] == 1)
-                # metrics[f'{contrast}_acc'] = df[mask]['correct_trial'].mean()
-                # metrics[f'{contrast}_rt'] = df[mask]['rt'].mean()
-                metrics[f'{contrast}_acc'] = df[mask_acc]['acc'].mean()
-                metrics[f'{contrast}_rt'] = df[mask_rt]['response_time'].mean() 
-            print(f'metrics: {metrics}')
+            for cond in SPATIAL_WITH_CUED_CONDITIONS:
+                    mask = (
+                        (df['task_switch'] == cond)
+                    )
+                    mask_acc = (df['task_switch'] == cond)
+                    mask_rt = (df['task_switch'] == cond) & (df['acc'] == 1)
+                    metrics[f'{cond}_acc'] = df[mask_acc]['acc'].mean()
+                    metrics[f'{cond}_rt'] = df[mask_rt]['response_time'].mean()
+            
             return metrics
     else:
         # For single tasks, we only need one set of conditions
@@ -209,10 +203,10 @@ def get_task_metrics(df, task_name):
             condition_columns = {'flanker': 'flanker_condition'}
         elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
-            condition_columns = {'spatial_task_switching': 'spatial_task_switching_condition'}
+            condition_columns = {'spatial_task_switching': 'task_switch'}
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
-            condition_columns = {'cued_task_switching': 'cued_task_switching_condition'}
+            condition_columns = {'cued_task_switching': 'task_switch'}
     
     return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
 
