@@ -66,6 +66,6 @@ DUAL_TASKS_FMRI = [
 
 FLANKER_CONDITIONS = ['congruent', 'incongruent']
 DIRECTED_FORGETTING_CONDITIONS = ['con', 'pos', 'neg']
-SPATIAL_TASK_SWITCHING_CONDITIONS = ['spatialtstaycstay', 'spatialtstaycswitch', 'spatialtswitchcswitch', 'spatialtswitchcstay']
-CUED_TASK_SWITCHING_CONDITIONS = ['cuedtstaycstay', 'cuedtstaycswitch', 'cuedtswitchcswitch', 'cuedtswitchcstay']
+SPATIAL_TASK_SWITCHING_CONDITIONS = ['tstaycstay', 'tstaycswitch', 'tswitchcswitch', 'tswitchcstay']
+CUED_TASK_SWITCHING_CONDITIONS = ['tstaycstay', 'tstaycswitch', 'tswitchcswitch', 'tswitchcstay']
 SPATIAL_WITH_CUED_CONDITIONS = ['cuedtswitchcswitch_spatialtstaycstay', 'cuedtswitchcswitch_spatialtswitchcstay', 'cuedtswitchcswitch_spatialtswitchcswitch', 'cuedtswitchcstay_spatialtstaycstay', 'cuedtswitchcstay_spatialtswitchcstay', 'cuedtswitchcstay_spatialtswitchcswitch']

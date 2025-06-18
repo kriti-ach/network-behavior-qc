@@ -203,10 +203,10 @@ def get_task_metrics(df, task_name):
             condition_columns = {'flanker': 'flanker_condition'}
         elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
-            condition_columns = {'spatial_task_switching': 'task_switch'}
+            condition_columns = {'spatial_task_switching': 'trial_type'}
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
-            condition_columns = {'cued_task_switching': 'task_switch'}
+            condition_columns = {'cued_task_switching': 'trial_type'}
     
     return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
 
