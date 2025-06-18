@@ -52,15 +52,15 @@ SINGLE_TASKS_FMRI = [
 ]
 
 DUAL_TASKS_FMRI = [
-    "directedForgettingWCuedTS"
-    "directedForgettingWFlanker"
-    "stopSignalWDirectedForgetting"
-    "stopSignalWFlanker"
-    "spatialTSWCuedTS"
-    "flankerWShapeMatching"
-    "cuedTSWFlanker"
-    "spatialTSWShapeMatching"
-    "nBackWShapeMatching"
+    "directedForgettingWCuedTS",
+    "directedForgettingWFlanker",
+    "stopSignalWDirectedForgetting",
+    "stopSignalWFlanker",
+    "spatialTSWCuedTS",
+    "flankerWShapeMatching",
+    "cuedTSWFlanker",
+    "spatialTSWShapeMatching",
+    "nBackWShapeMatching",
     "nBackWSpatialTS"
 ]
 
