@@ -250,8 +250,13 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
 
 def append_summary_rows_to_csv(csv_path):
     df = pd.read_csv(csv_path)
+    if df.empty:
+        return
+    if not df.select_dtypes(include=['number']).columns.any():
+        return
+    # if df has no numeric columns, return
     df.loc['mean'] = df.mean(numeric_only=True)
     df.loc['std'] = df.std(numeric_only=True)
-    df.loc['max'] = df.max(numeric_only=True)
-    df.loc['min'] = df.min(numeric_only=True)
+    df.loc['max'] = df.max(numeric_only=True, axis=1)
+    df.loc['min'] = df.min(numeric_only=True, axis=1)
     df.to_csv(csv_path, index=False)
