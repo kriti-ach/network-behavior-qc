@@ -44,7 +44,7 @@ def get_task_columns(task_name, sample_df=None):
                         f'{df_cond}_{flanker_cond}_rt'
                     ])
             return columns
-        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
+        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
             columns = ['subject_id']
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
                 columns.extend([f'{cond}_acc', f'{cond}_rt'])
@@ -169,7 +169,7 @@ def get_task_metrics(df, task_name):
     
     if is_dual_task(task_name):
         # For dual tasks, we need both sets of conditions
-        if 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
+        if ('directed_forgetting' in task_name and 'flanker' in task_name) or ('directedForgetting' in task_name and 'flanker' in task_name):
             conditions = {
                 'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
                 'flanker': FLANKER_CONDITIONS
@@ -180,16 +180,13 @@ def get_task_metrics(df, task_name):
             }
             return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
         
-        elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'cuedTS' in task_name and 'spatialTS' in task_name:
+        elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             metrics = {}
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
-                    mask = (
-                        (df['task_switch'] == cond)
-                    )
-                    mask_acc = (df['task_switch'] == cond)
-                    mask_rt = (df['task_switch'] == cond) & (df['acc'] == 1)
-                    metrics[f'{cond}_acc'] = df[mask_acc]['acc'].mean()
-                    metrics[f'{cond}_rt'] = df[mask_rt]['response_time'].mean()
+                mask_acc = (df['task_switch'] == cond)
+                mask_rt = (df['task_switch'] == cond) & (df['acc'] == 1)
+                metrics[f'{cond}_acc'] = df[mask_acc]['acc'].mean()
+                metrics[f'{cond}_rt'] = df[mask_rt]['response_time'].mean()
             
             return metrics
     else:
