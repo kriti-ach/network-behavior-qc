@@ -13,14 +13,16 @@ from utils.utils import (
 
 from utils.globals import SINGLE_TASKS_FMRI, DUAL_TASKS_FMRI, SINGLE_TASKS_OUT_OF_SCANNER, DUAL_TASKS_OUT_OF_SCANNER
 
-folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/validation_BIDS/")
+folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/validation_BIDS/")
 output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/qc_by_task/")
 
 # Initialize QC CSVs for all tasks
 initialize_qc_csvs(SINGLE_TASKS_FMRI + DUAL_TASKS_FMRI, output_path)
 
-for subject_folder in glob.glob(str(folder_path / "*")):
+for subject_folder in glob.glob(str(folder_path / "sub-s*")):
+    print(subject_folder)
     subject_id = Path(subject_folder).name
+    print(subject_id)
     # if re.match(r"s\d{2,}", subject_id):
     if re.match(r"sub-s\d{2,}", subject_id):
         print(f"Processing Subject: {subject_id}")

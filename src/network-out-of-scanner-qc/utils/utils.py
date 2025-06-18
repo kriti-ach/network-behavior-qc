@@ -118,7 +118,7 @@ def extract_task_name_fmri(filename):
     """
     match = re.match(r"sub-s\d{2,}_ses-(.*)_task-(.*)_run-(.*)_events\.tsv", filename)
     if match:
-        return match.group(1)
+        return match.group(2)
     return None
 
 def filter_to_test_trials(df, task_name):
