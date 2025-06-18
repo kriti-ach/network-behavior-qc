@@ -28,24 +28,6 @@ def initialize_qc_csvs(tasks, output_path):
         columns = get_task_columns(task)
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
-    append_summary_rows_to_csv(output_path / f"{task}_qc.csv")
-
-def append_summary_rows_to_csv(csv_path):
-    df = pd.read_csv(csv_path)
-    # Only operate if there are at least 4 columns
-    if df.shape[1] < 4:
-        return
-    stats_cols = df.columns[3:]
-    summary = {
-        'mean': [np.nan, np.nan, np.nan] + [df[col].mean() for col in stats_cols],
-        'std':  [np.nan, np.nan, np.nan] + [df[col].std() for col in stats_cols],
-        'max':  [np.nan, np.nan, np.nan] + [df[col].max() for col in stats_cols],
-        'min':  [np.nan, np.nan, np.nan] + [df[col].min() for col in stats_cols],
-    }
-    for stat, values in summary.items():
-        row = pd.Series(values, index=df.columns, name=stat)
-        df = pd.concat([df, row.to_frame().T], ignore_index=True)
-    df.to_csv(csv_path, index=False)
 
 def get_task_columns(task_name, sample_df=None):
     """
@@ -169,7 +151,10 @@ def update_qc_csv(output_path, task_name, subject_id, session, run, metrics):
             **metrics
         })
         df = pd.concat([df, new_row], ignore_index=True)
-        
+        df.loc['mean'] = df.mean(numeric_only=True)
+        df.loc['std'] = df.std(numeric_only=True)
+        df.loc['max'] = df.max(numeric_only=True)
+        df.loc['min'] = df.min(numeric_only=True)
         df.to_csv(qc_file, index=False)
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found") 
