@@ -181,7 +181,7 @@ def get_task_metrics(df, task_name):
                 mask_acc = (df['task_switch'] == cond)
                 mask_rt = (df['task_switch'] == cond) & (df['acc'] == 1)
                 mask_omission = (df['task_switch'] == cond) & (df['key_press'] == -1)
-                mask_commission = (df['task_switch'] == cond) & (df['acc'] == 0)
+                mask_commission = (df['task_switch'] == cond) & (df['key_press'] != -1) & (df['acc'] == 0)
                 num_omissions = len(df[mask_omission])
                 num_commissions = len(df[mask_commission])
                 total_num_trials = len(df[mask_acc])
