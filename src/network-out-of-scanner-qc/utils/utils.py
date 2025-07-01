@@ -29,54 +29,47 @@ def initialize_qc_csvs(tasks, output_path):
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
 
+def extend_metric_columns(base_columns, conditions):
+    """
+    Extend base columns with accuracy and RT metrics for given conditions.
+    
+    Args:
+        base_columns (list): Base columns (e.g., ['subject_id', 'session', 'run'])
+        conditions (list): List of conditions to create metrics for
+        
+    Returns:
+        list: Extended list of columns with _acc and _rt for each condition
+    """
+    metric_types = ['acc', 'rt', 'commission_rate', 'omission_rate']
+    return base_columns + [
+        f'{cond}_{metric}' 
+        for cond in conditions 
+        for metric in metric_types
+    ]
+
 def get_task_columns(task_name, sample_df=None):
     """
     Define columns for each task's QC CSV.
-    If sample_df is provided, use it for dynamic contrast extraction (e.g., cued+spatialts).
     """
+    base_columns = ['subject_id', 'session', 'run']
+    
     if is_dual_task(task_name):
         if 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for df_cond in DIRECTED_FORGETTING_CONDITIONS:
-                for flanker_cond in FLANKER_CONDITIONS:
-                    columns.extend([
-                        f'{df_cond}_{flanker_cond}_acc',
-                        f'{df_cond}_{flanker_cond}_rt'
-                    ])
-            return columns
+            # For dual tasks, create combined condition names
+            conditions = [
+                f'{df_cond}_{f_cond}'
+                for df_cond in DIRECTED_FORGETTING_CONDITIONS
+                for f_cond in FLANKER_CONDITIONS
+            ]
+            return extend_metric_columns(base_columns, conditions)
+            
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in SPATIAL_WITH_CUED_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
+            return extend_metric_columns(base_columns, SPATIAL_WITH_CUED_CONDITIONS)
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
+            return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
-            columns = ['subject_id', 'session', 'run']
-        elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in SPATIAL_TASK_SWITCHING_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
-        elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in CUED_TASK_SWITCHING_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
-        elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in DIRECTED_FORGETTING_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
-        elif 'flanker' in task_name:
-            columns = ['subject_id', 'session', 'run']
-            for cond in FLANKER_CONDITIONS:
-                columns.extend([f'{cond}_acc', f'{cond}_rt'])
-            return columns
+            return extend_metric_columns(base_columns, CUED_TASK_SWITCHING_CONDITIONS)
         else:
             print(f"Unknown task: {task_name}")
             return None
@@ -187,16 +180,53 @@ def get_task_metrics(df, task_name):
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
                 mask_acc = (df['task_switch'] == cond)
                 mask_rt = (df['task_switch'] == cond) & (df['acc'] == 1)
+                mask_omission = (df['task_switch'] == cond) & (df['key_press'] == -1)
+                mask_commission = (df['task_switch'] == cond) & (df['acc'] == 0)
+                num_omissions = len(df[mask_omission])
+                num_commissions = len(df[mask_commission])
+                total_num_trials = len(df[mask_acc])
                 metrics[f'{cond}_acc'] = df[mask_acc]['acc'].mean()
                 metrics[f'{cond}_rt'] = df[mask_rt]['response_time'].mean()
-            
+                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials
+                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials
             return metrics
     else:
-        # For single tasks, we only need one set of conditions
-        if 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
+        # Special handling for n-back task
+        if 'n_back' in task_name:
+            metrics = {}
+            # Get unique combinations of trial_type and delay
+            for trial_type in df['trial_type'].unique():
+                for delay in df['delay'].unique():
+                    condition = f"{trial_type}_{delay}back"
+                    mask_acc = (df['trial_type'] == trial_type) & (df['delay'] == delay)
+                    mask_rt = mask_acc & (df['acc'] == 1)
+                    metrics[f'{condition}_acc'] = df[mask_acc]['acc'].mean()
+                    metrics[f'{condition}_rt'] = df[mask_rt]['response_time'].mean()
+            return metrics
+            
+        # Special handling for stop signal task
+        elif 'stop_signal' in task_name:
+            metrics = {}
+            # Calculate metrics for each condition
+            for condition in STOP_SIGNAL_CONDITIONS:
+                mask_acc = (df['trial_type'] == condition)
+                mask_rt = mask_acc & (df['acc'] == 1)
+                metrics[f'{condition}_acc'] = df[mask_acc]['acc'].mean()
+                metrics[f'{condition}_rt'] = df[mask_rt]['response_time'].mean()
+                # Add count for stop trials
+                if condition in ['stop_success', 'stop_failure']:
+                    metrics[f'{condition}_count'] = len(df[mask_acc])
+            
+            # Add SS_delay statistics
+            metrics['mean_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].mean()
+            metrics['std_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].std()
+            return metrics
+            
+        # For other single tasks, we only need one set of conditions
+        elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             conditions = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
             condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
-        elif 'flanker' in task_name or 'flanker' in task_name:
+        elif 'flanker' in task_name:
             conditions = {'flanker': FLANKER_CONDITIONS}
             condition_columns = {'flanker': 'flanker_condition'}
         elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
@@ -205,8 +235,17 @@ def get_task_metrics(df, task_name):
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
             condition_columns = {'cued_task_switching': 'trial_type'}
+        elif 'go_nogo' in task_name:    
+            conditions = {'go_nogo': GO_NOGO_CONDITIONS}
+            condition_columns = {'go_nogo': 'go_nogo_condition'}
+        elif 'shape_matching' in task_name:
+            conditions = {'shape_matching': SHAPE_MATCHING_CONDITIONS}
+            condition_columns = {'shape_matching': 'shape_matching_condition'}
+        else:
+            print(f"Unknown task: {task_name}")
+            return None
     
-    return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+        return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
 
 def calculate_metrics(df, conditions, condition_columns, is_dual_task):
     """
