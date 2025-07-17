@@ -226,12 +226,13 @@ def get_task_metrics(df, task_name):
             metrics = {}
             # Get unique combinations of n_back_condition and delay
             for n_back_condition in df['n_back_condition'].unique():
-                for delay in df['delay'].unique():
-                    condition = f"{n_back_condition}_{delay}back"
-                    mask_acc = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay)
-                    mask_rt = mask_acc & (df['correct_trial'] == 1)
-                    metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
-                    metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
+                if n_back_condition != np.nan:
+                    for delay in df['delay'].unique():
+                        condition = f"{n_back_condition}_{delay}back"   
+                        mask_acc = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay)
+                        mask_rt = mask_acc & (df['correct_trial'] == 1)
+                        metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
+                        metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
             return metrics
 
         elif 'cued_task_switching' in task_name or 'spatial_task_switching' in task_name:
@@ -342,10 +343,10 @@ def append_summary_rows_to_csv(csv_path):
     # Only operate if there are at least 4 columns
     stats_cols = df.columns[3:]
     summary = {
-        'mean': ['mean', np.nan, np.nan] + [df[col].mean() for col in stats_cols],
-        'std':  ['std', np.nan, np.nan] + [df[col].std() for col in stats_cols],
-        'max':  ['max', np.nan, np.nan] + [df[col].max() for col in stats_cols],
-        'min':  ['min', np.nan, np.nan] + [df[col].min() for col in stats_cols],
+        'mean': ['mean'] + [df[col].mean() for col in stats_cols],
+        'std':  ['std'] + [df[col].std() for col in stats_cols],
+        'max':  ['max'] + [df[col].max() for col in stats_cols],
+        'min':  ['min'] + [df[col].min() for col in stats_cols],
     }
     for stat, values in summary.items():
         row = pd.Series(values, index=df.columns, name=stat)
