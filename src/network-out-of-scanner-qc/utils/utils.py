@@ -14,7 +14,9 @@ from utils.globals import (
     SPATIAL_TASK_SWITCHING_CONDITIONS,
     CUED_TASK_SWITCHING_CONDITIONS,
     SPATIAL_WITH_CUED_CONDITIONS,
-    STOP_SIGNAL_CONDITIONS
+    STOP_SIGNAL_CONDITIONS,
+    GO_NOGO_CONDITIONS,
+    SHAPE_MATCHING_CONDITIONS
 )
 
 def initialize_qc_csvs(tasks, output_path):
@@ -71,6 +73,35 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             return extend_metric_columns(base_columns, CUED_TASK_SWITCHING_CONDITIONS)
+        elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
+            return extend_metric_columns(base_columns, DIRECTED_FORGETTING_CONDITIONS)
+        elif 'flanker' in task_name:
+            return extend_metric_columns(base_columns, FLANKER_CONDITIONS)
+        elif 'n_back' in task_name:
+            # For n-back, we need to get the columns from the data
+            if sample_df is not None:
+                conditions = [
+                    f"{trial_type}_{delay}back"
+                    for trial_type in sample_df['trial_type'].unique()
+                    for delay in sample_df['delay'].unique()
+                ]
+                return extend_metric_columns(base_columns, conditions)
+            return base_columns  # Return base columns if no sample data available
+        elif 'stop_signal' in task_name:
+            # For stop signal, add the standard metrics plus additional columns
+            columns = extend_metric_columns(base_columns, STOP_SIGNAL_CONDITIONS)
+            # Add count columns for stop trials
+            columns.extend([
+                'stop_success_count',
+                'stop_failure_count',
+                'mean_SSD',
+                'std_SSD'
+            ])
+            return columns
+        elif 'go_nogo' in task_name:
+            return extend_metric_columns(base_columns, GO_NOGO_CONDITIONS)
+        elif 'shape_matching' in task_name:
+            return extend_metric_columns(base_columns, SHAPE_MATCHING_CONDITIONS)
         else:
             print(f"Unknown task: {task_name}")
             return None
@@ -234,6 +265,12 @@ def get_task_metrics(df, task_name):
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
             condition_columns = {'cued_task_switching': 'trial_type'}
+        elif 'go_nogo' in task_name:    
+            conditions = {'go_nogo': GO_NOGO_CONDITIONS}
+            condition_columns = {'go_nogo': 'go_nogo_condition'}
+        elif 'shape_matching' in task_name:
+            conditions = {'shape_matching': SHAPE_MATCHING_CONDITIONS}
+            condition_columns = {'shape_matching': 'shape_matching_condition'}
         else:
             print(f"Unknown task: {task_name}")
             return None
