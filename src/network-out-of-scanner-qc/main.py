@@ -23,7 +23,7 @@ output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_
 # Initialize QC CSVs for all tasks
 initialize_qc_csvs(SINGLE_TASKS_OUT_OF_SCANNER + DUAL_TASKS_OUT_OF_SCANNER, output_path)
 
-for subject_folder in glob.glob(str(folder_path / "sub-s*")):
+for subject_folder in glob.glob(str(folder_path / "s*")):
     subject_id = Path(subject_folder).name
     # if re.match(r"s\d{2,}", subject_id):
     if re.match(r"s\d{2,}", subject_id):

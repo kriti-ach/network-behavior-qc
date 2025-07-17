@@ -205,22 +205,22 @@ def get_task_metrics(df, task_name):
             return metrics
             
         # Special handling for stop signal task
-        elif 'stop_signal' in task_name:
-            metrics = {}
-            # Calculate metrics for each condition
-            for condition in STOP_SIGNAL_CONDITIONS:
-                mask_acc = (df['trial_type'] == condition)
-                mask_rt = mask_acc & (df['acc'] == 1)
-                metrics[f'{condition}_acc'] = df[mask_acc]['acc'].mean()
-                metrics[f'{condition}_rt'] = df[mask_rt]['response_time'].mean()
-                # Add count for stop trials
-                if condition in ['stop_success', 'stop_failure']:
-                    metrics[f'{condition}_count'] = len(df[mask_acc])
+        # elif 'stop_signal' in task_name:
+        #     metrics = {}
+        #     # Calculate metrics for each condition
+        #     for condition in STOP_SIGNAL_CONDITIONS:
+        #         mask_acc = (df['trial_type'] == condition)
+        #         mask_rt = mask_acc & (df['acc'] == 1)
+        #         metrics[f'{condition}_acc'] = df[mask_acc]['acc'].mean()
+        #         metrics[f'{condition}_rt'] = df[mask_rt]['response_time'].mean()
+        #         # Add count for stop trials
+        #         if condition in ['stop_success', 'stop_failure']:
+        #             metrics[f'{condition}_count'] = len(df[mask_acc])
             
-            # Add SS_delay statistics
-            metrics['mean_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].mean()
-            metrics['std_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].std()
-            return metrics
+        #     # Add SS_delay statistics
+        #     metrics['mean_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].mean()
+        #     metrics['std_SSD'] = df[df['SS_delay'].notna()]['SS_delay'].std()
+        #     return metrics
             
         # For other single tasks, we only need one set of conditions
         elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
