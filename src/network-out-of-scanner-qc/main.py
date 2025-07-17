@@ -39,12 +39,6 @@ for subject_folder in glob.glob(str(folder_path / "s*")):
             print(f"Processing task: {task_name}")
             
             if task_name:
-                if task_name == 'cuedTS':
-                    print(file)
-                    # check if file exists
-                    if not Path(file).exists():
-                        print(f"File {file} does not exist")
-                        continue
                 try:
                     df = pd.read_csv(file)
                     # df = pd.read_csv(file, sep='\t')
