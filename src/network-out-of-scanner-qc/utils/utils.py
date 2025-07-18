@@ -65,9 +65,30 @@ def get_task_columns(task_name, sample_df=None):
                 for f_cond in FLANKER_CONDITIONS
             ]
             return extend_metric_columns(base_columns, conditions)
-            
+        elif 'directed_forgetting' in task_name and 'shape_matching' in task_name:
+            conditions = [
+                f'{df_cond}_{f_cond}'
+                for df_cond in DIRECTED_FORGETTING_CONDITIONS
+                for f_cond in SHAPE_MATCHING_CONDITIONS
+            ]
+            return extend_metric_columns(base_columns, conditions)
+        elif 'flanker' in task_name and 'shape_matching' in task_name:
+            conditions = [
+                f'{f_cond}_{s_cond}'
+                for f_cond in FLANKER_CONDITIONS
+                for s_cond in SHAPE_MATCHING_CONDITIONS
+            ]
+            return extend_metric_columns(base_columns, conditions)
+        elif 'directed_forgetting' in task_name and 'spatial_task_switching' in task_name:
+            conditions = [
+                f'{df_cond}_{t_cond}'
+                for df_cond in DIRECTED_FORGETTING_CONDITIONS
+                for t_cond in SPATIAL_TASK_SWITCHING_CONDITIONS
+            ]
+            return extend_metric_columns(base_columns, conditions)
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_WITH_CUED_CONDITIONS)
+        
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
