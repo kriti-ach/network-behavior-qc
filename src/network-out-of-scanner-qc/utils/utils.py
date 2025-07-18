@@ -242,6 +242,8 @@ def get_task_metrics(df, task_name):
             metrics = {}
             for cue_condition in df['cue_condition'].unique():
                 for task_condition in df['task_condition'].unique():
+                    if pd.isna(cue_condition) or pd.isna(task_condition):
+                        continue
                     condition = f"t{task_condition}_c{cue_condition}"
                     mask_acc = (df['cue_condition'] == cue_condition) & (df['task_condition'] == task_condition)
                     mask_rt = mask_acc & (df['correct_trial'] == 1)
