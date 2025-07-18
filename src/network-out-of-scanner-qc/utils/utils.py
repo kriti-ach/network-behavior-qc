@@ -240,10 +240,10 @@ def get_task_metrics(df, task_name):
 
         elif 'cued_task_switching' in task_name:
             metrics = {}
-            for cue_condition in df['cue_condition'].unique():
-                for task_condition in df['task_condition'].unique():
-                    if pd.isna(cue_condition) or pd.isna(task_condition):
-                        continue
+            cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c)]
+            task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t)]
+            for cue_condition in cue_conditions:
+                for task_condition in task_conditions:
                     condition = f"t{task_condition}_c{cue_condition}"
                     mask_acc = (df['cue_condition'] == cue_condition) & (df['task_condition'] == task_condition)
                     mask_rt = mask_acc & (df['correct_trial'] == 1)
@@ -254,9 +254,8 @@ def get_task_metrics(df, task_name):
                     total_num_trials = len(df[mask_acc])
                     metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
                     metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
-                    metrics[f'{condition}_omission_rate'] = num_omissions / total_num_trials
-                    metrics[f'{condition}_commission_rate'] = num_commissions / total_num_trials
-                    print(metrics)
+                    metrics[f'{condition}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+                    metrics[f'{condition}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
             return metrics
     
 
