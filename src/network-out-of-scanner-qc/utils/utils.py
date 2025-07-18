@@ -438,12 +438,12 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
         task1, task2 = list(conditions.keys())
         for cond1 in conditions[task1]:
             for cond2 in conditions[task2]:
-                mask_acc = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2)
-                mask_rt = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2) & (df['correct_trial'] == 1)
+                mask_acc = (cond1 in df[condition_columns[task1]]) & (cond2 in df[condition_columns[task2]])
+                mask_rt = mask_acc & (df['correct_trial'] == 1)
                 metrics[f'{cond1}_{cond2}_acc'] = df[mask_acc]['correct_trial'].mean()
                 metrics[f'{cond1}_{cond2}_rt'] = df[mask_rt]['rt'].mean()
-                mask_omission = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2) & (df['key_press'] == -1)
-                mask_commission = (df[condition_columns[task1]] == cond1) & (df[condition_columns[task2]] == cond2) & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+                mask_omission = (cond1 in df[condition_columns[task1]]) & (cond2 in df[condition_columns[task2]]) & (df['key_press'] == -1)
+                mask_commission = (cond1 in df[condition_columns[task1]]) & (cond2 in df[condition_columns[task2]]) & (df['key_press'] != -1) & (df['correct_trial'] == 0)
                 num_omissions = len(df[mask_omission])
                 num_commissions = len(df[mask_commission])
                 total_num_trials = len(df[mask_acc])
