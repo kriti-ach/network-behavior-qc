@@ -259,6 +259,7 @@ def get_task_metrics(df, task_name):
                     metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
                     metrics[f'{condition}_omission_rate'] = num_omissions / total_num_trials
                     metrics[f'{condition}_commission_rate'] = num_commissions / total_num_trials
+                    print(metrics)
             return metrics
     
 
@@ -295,6 +296,7 @@ def get_task_metrics(df, task_name):
             else:
                 metrics['stop_failure_acc'] = np.nan
 
+            metrics['stop_success'] = len(df[stop_succ_mask])/len(df[stop_mask])
             # SSD stats
             ssd_vals = df.loc[stop_mask, 'SS_delay'].dropna()
             metrics['avg_ssd'] = ssd_vals.mean()
