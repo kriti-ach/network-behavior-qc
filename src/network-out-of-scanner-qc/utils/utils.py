@@ -226,6 +226,38 @@ def get_task_metrics(df, task_name):
             }
             return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
         
+        elif ('directed_forgetting' in task_name and 'shape_matching' in task_name) or ('directedForgetting' in task_name and 'shape_matching' in task_name):
+            conditions = {
+                'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
+                'shape_matching': SHAPE_MATCHING_CONDITIONS
+            }
+            condition_columns = {
+                'directed_forgetting': 'directed_forgetting_condition',
+                'shape_matching': 'shape_matching_condition'
+            }
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+        
+        elif ('flanker' in task_name and 'shape_matching' in task_name) or ('flanker' in task_name and 'shape_matching' in task_name):
+            conditions = {
+                'flanker': FLANKER_CONDITIONS,
+                'shape_matching': SHAPE_MATCHING_CONDITIONS
+            }
+            condition_columns = {
+                'flanker': 'flanker_condition',
+                'shape_matching': 'shape_matching_condition'
+            }
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+        
+        elif ('directed_forgetting' in task_name and 'spatial_task_switching' in task_name) or ('directedForgetting' in task_name and 'spatial_task_switching' in task_name):
+            conditions = {
+                'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
+                'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS
+            }
+            condition_columns = {
+                'directed_forgetting': 'directed_forgetting_condition',
+                'spatial_task_switching': 'task_switch'
+            }
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             metrics = {}
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
@@ -277,7 +309,6 @@ def get_task_metrics(df, task_name):
                     metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
                     metrics[f'{condition}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
                     metrics[f'{condition}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
-                    print(metrics)
             return metrics
     
 
