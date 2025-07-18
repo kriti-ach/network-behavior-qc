@@ -410,6 +410,8 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
                 num_omissions = len(df[mask_omission])
                 num_commissions = len(df[mask_commission])
                 total_num_trials = len(df[mask_acc])
+                print(f'mask_acc: {mask_acc}')
+                print(f'total_num_trials: {total_num_trials}')
                 metrics[f'{cond1}_{cond2}_omission_rate'] = num_omissions / total_num_trials
                 metrics[f'{cond1}_{cond2}_commission_rate'] = num_commissions / total_num_trials
     else:
