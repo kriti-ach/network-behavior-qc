@@ -235,7 +235,7 @@ def get_task_metrics(df, task_name):
                         metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
             return metrics
 
-        elif 'cued_task_switching' in task_name or 'spatial_task_switching' in task_name:
+        elif 'cued_task_switching' in task_name:
             metrics = {}
             for cue_condition in df['cue_condition'].unique():
                 for task_condition in df['task_condition'].unique():
@@ -279,9 +279,9 @@ def get_task_metrics(df, task_name):
         elif 'flanker' in task_name:
             conditions = {'flanker': FLANKER_CONDITIONS}
             condition_columns = {'flanker': 'flanker_condition'}
-        # elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
-        #     conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
-        #     condition_columns = {'spatial_task_switching': 'trial_type'}
+        elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
+            conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
+            condition_columns = {'spatial_task_switching': 'task_switch'}
         # elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
         #     conditions = {'cued_task_switching': CUED_TASK_SWITCHING_CONDITIONS}
         #     condition_columns = {'cued_task_switching': 'trial_type'}
