@@ -315,16 +315,18 @@ def get_task_metrics(df, task_name):
             return metrics
         
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
-            print(
-                df.loc[
-                    df['flanker_condition'].str.contains('congruent', case=False, na=False) &
-                    (df['task_condition'] == 'switch') &
-                    ((df['cue_condition'] == 'switch') | (df['cue_condition'] == 'switch_new'))
-                ][['subject_id', 'trial_id', 'flanker_condition', 'cue_condition', 'task_condition', 'correct_trial', 'key_press', 'rt']]
-            )
             metrics = {}
             cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
             task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na']
+            for flanker_val in ['incongruent', 'congruent']:
+                for cue_val in ['stay', 'switch']:
+                    mask = (
+                        df['flanker_condition'].str.contains(flanker_val, case=False, na=False) &
+                        (df['task_condition'].isin(['switch', 'switch_new'])) &
+                        (df['cue_condition'] == cue_val)
+                    )
+                    print(f"\nRows for {flanker_val}_tswitch_c{cue_val}:")
+                    print(df.loc[mask, ['flanker_condition', 'task_condition', 'cue_condition', 'correct_trial', 'key_press', 'rt']])
             for flanker in FLANKER_CONDITIONS:
                 for cue in cue_conditions:
                     for taskc in task_conditions:
