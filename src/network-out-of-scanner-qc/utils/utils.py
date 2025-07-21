@@ -315,6 +315,11 @@ def get_task_metrics(df, task_name):
             return metrics
         
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
+            print(df[
+                    df['flanker_condition'].str.contains('congruent', case=False, na=False) &
+                    (df['task_condition'] == 'switch') &
+                    ((df['cue_condition'] == 'switch') | (df['cue_condition'] == 'switch_new'))
+                ])
             metrics = {}
             cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
             task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na']
