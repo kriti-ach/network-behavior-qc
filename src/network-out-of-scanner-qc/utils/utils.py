@@ -316,36 +316,33 @@ def get_task_metrics(df, task_name):
         
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
             metrics = {}
-            cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
-            task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na']
-            for flanker_val in ['incongruent', 'congruent']:
-                for cue_val in ['stay', 'switch']:
-                    mask = (
-                        df['flanker_condition'].str.contains(flanker_val, case=False, na=False) &
-                        (df['task_condition'].isin(['switch', 'switch_new'])) &
-                        (df['cue_condition'] == cue_val)
-                    )
-                    print(f"\nRows for {flanker_val}_tswitch_c{cue_val}:")
-                    print(df.loc[mask, ['flanker_condition', 'task_condition', 'cue_condition', 'correct_trial', 'key_press', 'rt']])
-            for flanker in FLANKER_CONDITIONS:
-                for cue in cue_conditions:
-                    for taskc in task_conditions:
-                        # If taskc is 'switch_new', treat as 'switch' for both mask and col_prefix
-                        taskc_for_mask = 'switch' if taskc == 'switch_new' else taskc
-                        mask_acc = df['flanker_condition'].str.contains(flanker, case=False, na=False) & \
-                                   (df['cue_condition'] == cue) & (df['task_condition'] == taskc_for_mask)
-                        mask_rt = mask_acc & (df['correct_trial'] == 1)
-                        mask_omission = mask_acc & (df['key_press'] == -1)
-                        mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
-                        num_omissions = len(df[mask_omission])
-                        num_commissions = len(df[mask_commission])
-                        total_num_trials = len(df[mask_acc])
-                        col_taskc = 'switch' if taskc == 'switch_new' else taskc
-                        col_prefix = f"{flanker}_t{col_taskc}_c{cue}"
-                        metrics[f'{col_prefix}_acc'] = df[mask_acc]['correct_trial'].mean()
-                        metrics[f'{col_prefix}_rt'] = df[mask_rt]['rt'].mean()
-                        metrics[f'{col_prefix}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
-                        metrics[f'{col_prefix}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+            for cond in FLANKER_WITH_CUED_CONDITIONS:
+                # cond format: '{flanker}_t{task}_c{cue}'
+                try:
+                    flanker, t_part, c_part = cond.split('_t')
+                    task, cue = t_part.split('_c')
+                except ValueError:
+                    print(f"Skipping malformed condition: {cond}")
+                    continue
+
+                # Map 'switch_new' to 'switch' for task
+                task_for_mask = 'switch' if task == 'switch_new' else task
+
+                mask_acc = (
+                    df['flanker_condition'].str.contains(flanker, case=False, na=False) &
+                    (df['task_condition'].apply(lambda x: str(x).lower()) == task_for_mask) &
+                    (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
+                )
+                mask_rt = mask_acc & (df['correct_trial'] == 1)
+                mask_omission = mask_acc & (df['key_press'] == -1)
+                mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+                num_omissions = len(df[mask_omission])
+                num_commissions = len(df[mask_commission])
+                total_num_trials = len(df[mask_acc])
+                metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
+                metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
+                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
             return metrics
         
     else:
