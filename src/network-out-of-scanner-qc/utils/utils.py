@@ -319,7 +319,7 @@ def get_task_metrics(df, task_name):
             for cond in FLANKER_WITH_CUED_CONDITIONS:
                 # cond format: '{flanker}_t{task}_c{cue}'
                 try:
-                    flanker, t_part, c_part = cond.split('_t')
+                    flanker, t_part = cond.split('_t')
                     task, cue = t_part.split('_c')
                 except ValueError:
                     print(f"Skipping malformed condition: {cond}")
