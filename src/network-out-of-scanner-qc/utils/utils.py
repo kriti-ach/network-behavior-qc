@@ -321,15 +321,18 @@ def get_task_metrics(df, task_name):
             for flanker in FLANKER_CONDITIONS:
                 for cue in cue_conditions:
                     for taskc in task_conditions:
+                        # If taskc is 'switch_new', treat as 'switch' for both mask and col_prefix
+                        taskc_for_mask = 'switch' if taskc == 'switch_new' else taskc
                         mask_acc = df['flanker_condition'].str.contains(flanker, case=False, na=False) & \
-                                   (df['cue_condition'] == cue) & (df['task_condition'] == taskc)
+                                   (df['cue_condition'] == cue) & (df['task_condition'] == taskc_for_mask)
                         mask_rt = mask_acc & (df['correct_trial'] == 1)
                         mask_omission = mask_acc & (df['key_press'] == -1)
                         mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
                         num_omissions = len(df[mask_omission])
                         num_commissions = len(df[mask_commission])
                         total_num_trials = len(df[mask_acc])
-                        col_prefix = f"f{flanker}_t{taskc}_c{cue}"
+                        col_taskc = 'switch' if taskc == 'switch_new' else taskc
+                        col_prefix = f"{flanker}_t{col_taskc}_c{cue}"
                         metrics[f'{col_prefix}_acc'] = df[mask_acc]['correct_trial'].mean()
                         metrics[f'{col_prefix}_rt'] = df[mask_rt]['rt'].mean()
                         metrics[f'{col_prefix}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
