@@ -221,6 +221,66 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found")
 
+def compute_cued_task_switching_metrics(
+    df,
+    condition_list,
+    condition_type,
+    flanker_col=None,
+    go_nogo_col=None
+):
+    """
+    Compute metrics for cued task switching and its duals (flanker/go_nogo).
+    - condition_list: list of condition strings (e.g., FLANKER_WITH_CUED_CONDITIONS, GO_NOGO_WITH_CUED_CONDITIONS, or CUED_TASK_SWITCHING_CONDITIONS)
+    - condition_type: 'single', 'flanker', or 'go_nogo'
+    - flanker_col: column name for flanker (if dual)
+    - go_nogo_col: column name for go_nogo (if dual)
+    """
+    metrics = {}
+    for cond in condition_list:
+        try:
+            if condition_type == 'single':
+                # cond format: t{task}_c{cue}
+                if not cond.startswith('t') or '_c' not in cond:
+                    continue
+                task = cond[1:cond.index('_c')]
+                cue = cond[cond.index('_c')+2:]
+                mask_acc = (df['task_condition'].apply(lambda x: str(x).lower()) == task) & \
+                           (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
+            elif condition_type == 'flanker':
+                # cond format: {flanker}_t{task}_c{cue}
+                flanker, t_part = cond.split('_t')
+                task, cue = t_part.split('_c')
+                mask_acc = (
+                    df[flanker_col].str.contains(flanker, case=False, na=False) &
+                    (df['task_condition'].apply(lambda x: str(x).lower()) == ('switch' if task in ['switch', 'switch_new'] else task)) &
+                    (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
+                )
+            elif condition_type == 'go_nogo':
+                # cond format: {go_nogo}_t{task}_c{cue}
+                go_nogo, t_part = cond.split('_t')
+                task, cue = t_part.split('_c')
+                mask_acc = (
+                    (df[go_nogo_col].apply(lambda x: str(x).lower()) == go_nogo) &
+                    (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
+                    (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
+                )
+            else:
+                continue
+        except Exception as e:
+            print(f"Skipping malformed condition: {cond} ({e})")
+            continue
+        mask_rt = mask_acc & (df['correct_trial'] == 1)
+        mask_omission = mask_acc & (df['key_press'] == -1)
+        mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+        num_omissions = len(df[mask_omission])
+        num_commissions = len(df[mask_commission])
+        total_num_trials = len(df[mask_acc])
+        metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
+        metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
+        metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+        metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+    return metrics
+
 def get_task_metrics(df, task_name):
     """
     Main function to get metrics for any task.
@@ -318,59 +378,10 @@ def get_task_metrics(df, task_name):
                 metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials
                 metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials
             return metrics
-        
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
-            metrics = {}
-            for cond in FLANKER_WITH_CUED_CONDITIONS:
-                try:
-                    flanker, t_part = cond.split('_t')
-                    task, cue = t_part.split('_c')
-                except ValueError:
-                    print(f"Skipping malformed condition: {cond}")
-                    continue
-
-                mask_acc = (
-                    df['flanker_condition'].str.contains(flanker, case=False, na=False) &
-                    (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
-                    (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
-                )
-                mask_rt = mask_acc & (df['correct_trial'] == 1)
-                mask_omission = mask_acc & (df['key_press'] == -1)
-                mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
-                num_omissions = len(df[mask_omission])
-                num_commissions = len(df[mask_commission])
-                total_num_trials = len(df[mask_acc])
-                if cond == 'congruent_tswitch_new_cswitch':
-                    cond = 'congruent_tswitch_cswitch'
-                elif cond == 'incongruent_tswitch_new_cswitch':
-                    cond = 'incongruent_tswitch_cswitch'
-                metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
-                metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
-                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
-                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
-            return metrics
-        
+            return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
         elif ('go_nogo' in task_name and 'cued_task_switching' in task_name) or ('go_nogo' in task_name and 'CuedTS' in task_name):
-            metrics = {}
-            for cond in GO_NOGO_WITH_CUED_CONDITIONS:
-                try:
-                    go_nogo, t_part = cond.split('_t')
-                    task, cue = t_part.split('_c')
-                except ValueError:
-                    print(f"Skipping malformed condition: {cond}")
-                    continue
-                mask_acc = (df['go_nogo_condition'] == cond)
-                mask_rt = mask_acc & (df['correct_trial'] == 1)
-                mask_omission = mask_acc & (df['key_press'] == -1)
-                mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
-                num_omissions = len(df[mask_omission])
-                num_commissions = len(df[mask_commission])
-                total_num_trials = len(df[mask_acc])
-                metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
-                metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
-                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
-                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
-            return metrics
+            return compute_cued_task_switching_metrics(df, GO_NOGO_WITH_CUED_CONDITIONS, 'go_nogo', go_nogo_col='go_nogo_condition')
     else:
         # Special handling for n-back task
         if 'n_back' in task_name:
@@ -390,24 +401,7 @@ def get_task_metrics(df, task_name):
             return metrics
 
         elif 'cued_task_switching' in task_name:
-            metrics = {}
-            cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
-            task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na']
-            for cue_condition in cue_conditions:
-                for task_condition in task_conditions:
-                    condition = f"t{task_condition}_c{cue_condition}"
-                    mask_acc = (df['cue_condition'] == cue_condition) & (df['task_condition'] == task_condition)
-                    mask_rt = mask_acc & (df['correct_trial'] == 1)
-                    mask_omission = mask_acc & (df['key_press'] == -1)
-                    mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
-                    num_omissions = len(df[mask_omission])
-                    num_commissions = len(df[mask_commission])
-                    total_num_trials = len(df[mask_acc])
-                    metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
-                    metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
-                    metrics[f'{condition}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
-                    metrics[f'{condition}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
-            return metrics
+            return compute_cued_task_switching_metrics(df, [f"t{t}_c{c}" for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na' for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na'], 'single')
         # Special handling for stop signal task
         elif 'stop_signal' in task_name:
             metrics = {}
