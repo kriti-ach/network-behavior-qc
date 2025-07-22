@@ -17,7 +17,8 @@ from utils.globals import (
     STOP_SIGNAL_CONDITIONS,
     GO_NOGO_CONDITIONS,
     SHAPE_MATCHING_CONDITIONS,
-    FLANKER_WITH_CUED_CONDITIONS
+    FLANKER_WITH_CUED_CONDITIONS,
+    GO_NOGO_WITH_CUED_CONDITIONS
 )
 
 def initialize_qc_csvs(tasks, output_path):
@@ -105,6 +106,8 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, SPATIAL_WITH_CUED_CONDITIONS)
         elif 'flanker' in task_name and 'cued_task_switching' in task_name or 'flanker' in task_name and 'CuedTS' in task_name:
             return extend_metric_columns(base_columns, FLANKER_WITH_CUED_CONDITIONS)
+        elif 'go_nogo' in task_name and 'cued_task_switching' in task_name or 'go_nogo' in task_name and 'CuedTS' in task_name:
+            return extend_metric_columns(base_columns, GO_NOGO_WITH_CUED_CONDITIONS)
         
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
@@ -345,11 +348,29 @@ def get_task_metrics(df, task_name):
                 metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
                 metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
                 metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
-                if cond == 'congruent_tswitch_cswitch' or cond == 'incongruent_tswitch_cswitch':
-                    print(f"Condition: {cond}")
-                    print(f"  mask_acc: \n{mask_acc}")
             return metrics
         
+        elif ('go_nogo' in task_name and 'cued_task_switching' in task_name) or ('go_nogo' in task_name and 'CuedTS' in task_name):
+            metrics = {}
+            for cond in GO_NOGO_WITH_CUED_CONDITIONS:
+                try:
+                    go_nogo, t_part = cond.split('_t')
+                    task, cue = t_part.split('_c')
+                except ValueError:
+                    print(f"Skipping malformed condition: {cond}")
+                    continue
+                mask_acc = (df['go_nogo_condition'] == cond)
+                mask_rt = mask_acc & (df['correct_trial'] == 1)
+                mask_omission = mask_acc & (df['key_press'] == -1)
+                mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+                num_omissions = len(df[mask_omission])
+                num_commissions = len(df[mask_commission])
+                total_num_trials = len(df[mask_acc])
+                metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
+                metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
+                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+            return metrics
     else:
         # Special handling for n-back task
         if 'n_back' in task_name:
