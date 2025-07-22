@@ -317,13 +317,6 @@ def get_task_metrics(df, task_name):
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
             metrics = {}
             for cond in FLANKER_WITH_CUED_CONDITIONS:
-                print(f"DEBUG: {cond}")
-                print("Unique flanker_condition:", df['flanker_condition'].unique())
-                print("Unique task_condition:", df['task_condition'].unique())
-                print("Unique cue_condition:", df['cue_condition'].unique())
-                print("Mask sum:", mask_acc.sum())
-                print(df.loc[mask_acc, ['flanker_condition', 'task_condition', 'cue_condition']])
-                # cond format: '{flanker}_t{task}_c{cue}'
                 try:
                     flanker, t_part = cond.split('_t')
                     task, cue = t_part.split('_c')
@@ -349,6 +342,12 @@ def get_task_metrics(df, task_name):
                 metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
                 metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
                 metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+                if cond == 'congruent_tswitch_cswitch' or cond == 'incongruent_tswitch_cswitch':
+                    print(f"Condition: {cond}")
+                    print(f"  mask_acc: \n{mask_acc}")
+                    print(f"  mask_rt: \n{mask_rt}")
+                    print(f"  mask_omission: \n{mask_omission}")
+                    print(f"  mask_commission: \n{mask_commission}")
             return metrics
         
     else:
