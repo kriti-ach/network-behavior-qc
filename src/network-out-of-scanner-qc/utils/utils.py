@@ -109,6 +109,8 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, FLANKER_WITH_CUED_CONDITIONS)
         elif 'go_nogo' in task_name and 'cued_task_switching' in task_name or 'go_nogo' in task_name and 'CuedTS' in task_name:
             return extend_metric_columns(base_columns, GO_NOGO_WITH_CUED_CONDITIONS)
+        elif 'shape_matching' in task_name and 'cued_task_switching' in task_name or 'shape_matching' in task_name and 'CuedTS' in task_name:
+            return extend_metric_columns(base_columns, SHAPE_MATCHING_WITH_CUED_CONDITIONS)
         
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
