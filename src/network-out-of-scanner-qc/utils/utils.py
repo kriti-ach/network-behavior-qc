@@ -212,6 +212,8 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
             **metrics
         })
         df = pd.concat([df, new_row], ignore_index=True)
+        if task_name == 'flanker_with_cued_task_switching':
+            df = df.drop(columns=[col for col in df.columns if col.startswith('congruent_tswitch_new_c') or col.startswith('incongruent_tswitch_new_c')])
         df.to_csv(qc_file, index=False)
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found")
