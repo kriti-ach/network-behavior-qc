@@ -272,12 +272,14 @@ def compute_cued_task_switching_metrics(
                 # cond format: {shape_matching}_t{task}_c{cue}
                 shape_matching, t_part = cond.split('_t')
                 task, cue = t_part.split('_c')
+                print(f'shape_matching: {shape_matching}')
+                print(f'task: {task}')
+                print(f'cue: {cue}')
                 mask_acc = (
                     (df[shape_matching_col].apply(lambda x: str(x).lower()) == shape_matching) &
                     (df['task_condition'].apply(lambda x: str(x).lower()) == ('switch' if task in ['switch', 'switch_new'] else task)) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                print(f'mask_acc: {mask_acc}')
             else:
                 continue
         except Exception as e:
