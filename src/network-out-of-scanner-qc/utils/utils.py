@@ -277,6 +277,7 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == ('switch' if task in ['switch', 'switch_new'] else task)) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
+                print(f'mask_acc: {mask_acc}')
             else:
                 continue
         except Exception as e:
