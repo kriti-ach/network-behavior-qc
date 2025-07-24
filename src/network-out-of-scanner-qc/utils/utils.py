@@ -307,6 +307,45 @@ def compute_cued_task_switching_metrics(
         metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
     return metrics
 
+def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None):
+    """
+    Compute metrics for n-back tasks (single or dual).
+    - df: DataFrame
+    - condition_list: list of n-back conditions (e.g., ['0', '2']) or list of tuples for duals
+    - paired_task_col: column name for the paired task (if dual)
+    - paired_conditions: list of paired task conditions (if dual)
+    Returns: dict of metrics
+    """
+    metrics = {}
+    if paired_task_col is None:
+        # Single n-back: iterate over n_back_condition and delay
+        for n_back_condition in df['n_back_condition'].unique():
+            if pd.isna(n_back_condition):
+                continue
+            for delay in df['delay'].unique():
+                if pd.isna(delay):
+                    continue
+                condition = f"{n_back_condition}_{delay}back"
+                mask_acc = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay)
+                mask_rt = mask_acc & (df['correct_trial'] == 1)
+                metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
+                metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
+    else:
+        # Dual n-back: iterate over n_back_condition, delay, and paired task conditions
+        for n_back_condition in df['n_back_condition'].unique():
+            if pd.isna(n_back_condition):
+                continue
+            for delay in df['delay'].unique():
+                if pd.isna(delay):
+                    continue
+                for paired_cond in paired_conditions:
+                    condition = f"{n_back_condition}_{delay}back_{paired_cond}"
+                    mask_acc = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col] == paired_cond)
+                    mask_rt = mask_acc & (df['correct_trial'] == 1)
+                    metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
+                    metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
+    return metrics
+
 def get_task_metrics(df, task_name):
     """
     Main function to get metrics for any task.
@@ -412,23 +451,18 @@ def get_task_metrics(df, task_name):
             return compute_cued_task_switching_metrics(df, SHAPE_MATCHING_WITH_CUED_CONDITIONS, 'shape_matching', shape_matching_col='shape_matching_condition')
         elif ('directed_forgetting' in task_name and 'cued_task_switching' in task_name) or ('directedForgetting' in task_name and 'CuedTS' in task_name):
             return compute_cued_task_switching_metrics(df, CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS, 'directed_forgetting', directed_forgetting_col='directed_forgetting_condition')
+        elif ('n_back' in task_name and 'go_nogo' in task_name) or ('NBack' in task_name and 'go_nogo' in task_name):
+            # Example: dual n-back with go_nogo
+            paired_conditions = [c for c in df['go_nogo_condition'].unique() if pd.notna(c)]
+            return compute_n_back_metrics(df, None, paired_task_col='go_nogo_condition', paired_conditions=paired_conditions)
+        elif ('n_back' in task_name and 'flanker' in task_name) or ('NBack' in task_name and 'flanker' in task_name):
+            paired_conditions = [c for c in df['flanker_condition'].unique() if pd.notna(c)]
+            return compute_n_back_metrics(df, None, paired_task_col='flanker_condition', paired_conditions=paired_conditions)
+        # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
         if 'n_back' in task_name:
-            metrics = {}
-            # Get unique combinations of n_back_condition and delay
-            for n_back_condition in df['n_back_condition'].unique():
-                if pd.isna(n_back_condition):
-                    continue
-                for delay in df['delay'].unique():
-                    if pd.isna(delay):
-                        continue
-                    condition = f"{n_back_condition}_{delay}back"   
-                    mask_acc = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay)
-                    mask_rt = mask_acc & (df['correct_trial'] == 1)
-                    metrics[f'{condition}_acc'] = df[mask_acc]['correct_trial'].mean()
-                    metrics[f'{condition}_rt'] = df[mask_rt]['rt'].mean()
-            return metrics
+            return compute_n_back_metrics(df, None)
 
         elif 'cued_task_switching' in task_name:
             return compute_cued_task_switching_metrics(df, CUED_TASK_SWITCHING_CONDITIONS, 'single')
