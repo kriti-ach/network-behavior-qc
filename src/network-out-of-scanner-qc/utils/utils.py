@@ -376,6 +376,8 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                     continue
                 for cue in cue_conditions:
                     for taskc in task_conditions:
+                        if cue == "stay" and taskc == "switch":
+                            continue
                         col_prefix = f"{n_back_condition}_{delay}back_t{taskc}_c{cue}"
                         mask_acc = (
                             (df['n_back_condition'] == n_back_condition) &
