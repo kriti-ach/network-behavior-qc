@@ -54,6 +54,24 @@ def extend_metric_columns(base_columns, conditions):
         for metric in metric_types
     ]
 
+def get_dual_n_back_columns(base_columns, sample_df, paired_col):
+    """
+    Generate columns for dual n-back tasks (n-back paired with another task).
+    - base_columns: list of base columns (e.g., ['subject_id'])
+    - sample_df: DataFrame with sample data
+    - paired_col: column name for the paired task (e.g., 'go_nogo_condition', 'flanker_condition')
+    Returns: list of columns
+    """
+    if sample_df is not None:
+        conditions = [
+            f"{n_back_condition}_{delay}back_{paired_condition}"
+            for n_back_condition in sample_df['n_back_condition'].unique()
+            for delay in sample_df['delay'].unique()
+            for paired_condition in sample_df[paired_col].unique()
+        ]
+        return extend_metric_columns(base_columns, conditions)
+    return base_columns  # Return base columns if no sample data available
+
 def get_task_columns(task_name, sample_df=None):
     """
     Define columns for each task's QC CSV.
@@ -114,7 +132,10 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, SHAPE_MATCHING_WITH_CUED_CONDITIONS)
         elif 'directed_forgetting' in task_name and 'cued_task_switching' in task_name or 'directedForgetting' in task_name and 'CuedTS' in task_name:
             return extend_metric_columns(base_columns, CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS)
-        
+        elif 'go_nogo' in task_name and 'n_back' in task_name or 'go_nogo' in task_name and 'NBack' in task_name:
+            return get_dual_n_back_columns(base_columns, sample_df, 'go_nogo_condition')
+        elif 'flanker' in task_name and 'n_back' in task_name or 'flanker' in task_name and 'NBack' in task_name:
+            return get_dual_n_back_columns(base_columns, sample_df, 'flanker_condition')
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
