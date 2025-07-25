@@ -136,6 +136,10 @@ def get_task_columns(task_name, sample_df=None):
             return get_dual_n_back_columns(base_columns, sample_df, 'go_nogo_condition')
         elif 'flanker' in task_name and 'n_back' in task_name or 'flanker' in task_name and 'NBack' in task_name:
             return get_dual_n_back_columns(base_columns, sample_df, 'flanker_condition')
+        elif 'shape_matching' in task_name and 'n_back' in task_name or 'shape_matching' in task_name and 'NBack' in task_name:
+            return get_dual_n_back_columns(base_columns, sample_df, 'shape_matching_condition')
+        elif 'directed_forgetting' in task_name and 'n_back' in task_name or 'directedForgetting' in task_name and 'NBack' in task_name:
+            return get_dual_n_back_columns(base_columns, sample_df, 'directed_forgetting_condition')
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
@@ -479,6 +483,12 @@ def get_task_metrics(df, task_name):
         elif ('n_back' in task_name and 'flanker' in task_name) or ('NBack' in task_name and 'flanker' in task_name):
             paired_conditions = [c for c in df['flanker_condition'].unique() if pd.notna(c)]
             return compute_n_back_metrics(df, None, paired_task_col='flanker_condition', paired_conditions=paired_conditions)
+        elif ('n_back' in task_name and 'shape_matching' in task_name) or ('NBack' in task_name and 'shape_matching' in task_name):
+            paired_conditions = [c for c in df['shape_matching_condition'].unique() if pd.notna(c)]
+            return compute_n_back_metrics(df, None, paired_task_col='shape_matching_condition', paired_conditions=paired_conditions)
+        elif ('n_back' in task_name and 'directed_forgetting' in task_name) or ('NBack' in task_name and 'directed_forgetting' in task_name):
+            paired_conditions = [c for c in df['directed_forgetting_condition'].unique() if pd.notna(c)]
+            return compute_n_back_metrics(df, None, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions)
         # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
