@@ -332,16 +332,46 @@ def compute_cued_task_switching_metrics(
         metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
     return metrics
 
-def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None):
+def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False):
     """
-    Compute metrics for n-back tasks (single or dual).
+    Compute metrics for n-back tasks (single, dual, or n-back with cuedts).
     - df: DataFrame
     - condition_list: list of n-back conditions (e.g., ['0', '2']) or list of tuples for duals
     - paired_task_col: column name for the paired task (if dual)
     - paired_conditions: list of paired task conditions (if dual)
+    - cuedts: if True, handle n-back with cued task switching
     Returns: dict of metrics
     """
     metrics = {}
+    if cuedts:
+        cue_conditions = [c for c in df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
+        task_conditions = [t for t in df['task_condition'].unique() if pd.notna(t) and str(t).lower() != 'na']
+        for n_back_condition in df['n_back_condition'].unique():
+            if pd.isna(n_back_condition):
+                continue
+            for delay in df['delay'].unique():
+                if pd.isna(delay):
+                    continue
+                for cue in cue_conditions:
+                    for taskc in task_conditions:
+                        col_prefix = f"{n_back_condition}_{delay}back_t{taskc}_c{cue}"
+                        mask_acc = (
+                            (df['n_back_condition'] == n_back_condition) &
+                            (df['delay'] == delay) &
+                            (df['cue_condition'] == cue) &
+                            (df['task_condition'] == taskc)
+                        )
+                        mask_rt = mask_acc & (df['correct_trial'] == 1)
+                        mask_omission = mask_acc & (df['key_press'] == -1)
+                        mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+                        num_omissions = len(df[mask_omission])
+                        num_commissions = len(df[mask_commission])
+                        total_num_trials = len(df[mask_acc])
+                        metrics[f'{col_prefix}_acc'] = df[mask_acc]['correct_trial'].mean()
+                        metrics[f'{col_prefix}_rt'] = df[mask_rt]['rt'].mean()
+                        metrics[f'{col_prefix}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+                        metrics[f'{col_prefix}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+        return metrics
     if paired_task_col is None:
         # Single n-back: iterate over n_back_condition and delay
         for n_back_condition in df['n_back_condition'].unique():
