@@ -158,7 +158,7 @@ def get_task_columns(task_name, sample_df=None):
         elif 'directed_forgetting' in task_name and 'n_back' in task_name or 'directedForgetting' in task_name and 'NBack' in task_name:
             return get_dual_n_back_columns(base_columns, sample_df, 'directed_forgetting_condition')
         elif 'n_back' in task_name and 'cued_task_switching' in task_name or 'NBack' in task_name and 'CuedTS' in task_name:
-            return get_dual_n_back_columns(base_columns, sample_df, 'cue_condition', 'task_condition', cuedts=True)
+            return get_dual_n_back_columns(base_columns, sample_df, cuedts=True)
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
