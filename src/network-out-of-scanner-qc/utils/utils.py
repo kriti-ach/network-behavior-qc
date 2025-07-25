@@ -76,8 +76,11 @@ def get_dual_n_back_columns(base_columns, sample_df, paired_col=None, cuedts=Fal
                         continue
                     for cue in cue_conditions:
                         for taskc in task_conditions:
-                            col_prefix = f"{n_back_condition}_{delay}back_t{taskc}_c{cue}"
-                            conditions.append(col_prefix)
+                            if cue == "stay" and taskc == "switch":
+                                continue
+                            else:
+                                col_prefix = f"{n_back_condition}_{delay}back_t{taskc}_c{cue}"
+                                conditions.append(col_prefix)
             return extend_metric_columns(base_columns, conditions)
         else:
             conditions = [
