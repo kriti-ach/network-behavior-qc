@@ -63,6 +63,7 @@ def get_dual_n_back_columns(base_columns, sample_df, paired_col, cuedts=False):
     - cuedts: if True, handle n-back with cued task switching
     Returns: list of columns
     """
+    conditions = []
     if sample_df is not None:
         if cuedts:
             cue_conditions = [c for c in sample_df['cue_condition'].unique() if pd.notna(c) and str(c).lower() != 'na']
@@ -85,7 +86,7 @@ def get_dual_n_back_columns(base_columns, sample_df, paired_col, cuedts=False):
                 for delay in sample_df['delay'].unique()
                 for paired_condition in sample_df[paired_col].unique()
             ]
-            return extend_metric_columns(base_columns, conditions)
+        return extend_metric_columns(base_columns, conditions)
     return base_columns  # Return base columns if no sample data available
 
 def get_task_columns(task_name, sample_df=None):
