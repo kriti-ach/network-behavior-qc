@@ -166,9 +166,9 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, conditions)
         elif 'shape_matching' in task_name and 'spatial_task_switching' in task_name or 'shape_matching' in task_name and 'spatialTS' in task_name:
             conditions = [
-                f'{s_cond}_{s_cond}'
-                for s_cond in SPATIAL_TASK_SWITCHING_CONDITIONS
-                for s_cond in SHAPE_MATCHING_CONDITIONS
+                f'{sp_cond}_{sm_cond}'
+                for sp_cond in SPATIAL_TASK_SWITCHING_CONDITIONS
+                for sm_cond in SHAPE_MATCHING_CONDITIONS
             ]
             return extend_metric_columns(base_columns, conditions)
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
