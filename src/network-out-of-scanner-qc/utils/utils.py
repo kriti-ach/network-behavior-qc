@@ -429,7 +429,7 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
         return metrics
     if paired_task_col is None:
         # Single n-back: iterate over n_back_condition and delay
-        for n_back_condition in df['n_back_condition'].unique():
+        for n_back_condition in df['n_back_condition'].str.lower().unique():
             if pd.isna(n_back_condition):
                 continue
             for delay in df['delay'].unique():
@@ -663,7 +663,7 @@ def get_task_metrics(df, task_name):
         elif ('n_back' in task_name and 'cued_task_switching' in task_name) or ('NBack' in task_name and 'CuedTS' in task_name):
             return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=None, cuedts=True)
         elif ('n_back' in task_name and 'spatial_task_switching' in task_name) or ('NBack' in task_name and 'spatialTS' in task_name):
-            paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c)]
+            paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
             return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions)
         # Add more dual n-back pairings as needed
     else:
