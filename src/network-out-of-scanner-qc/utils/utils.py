@@ -20,7 +20,8 @@ from utils.globals import (
     FLANKER_WITH_CUED_CONDITIONS,
     GO_NOGO_WITH_CUED_CONDITIONS,
     SHAPE_MATCHING_WITH_CUED_CONDITIONS,
-    CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS
+    CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS,
+    SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
 )
 
 def initialize_qc_csvs(tasks, output_path):
@@ -107,13 +108,6 @@ def get_task_columns(task_name, sample_df=None):
                 for f_cond in FLANKER_CONDITIONS
             ]
             return extend_metric_columns(base_columns, conditions)
-        elif 'directed_forgetting' in task_name and 'shape_matching' in task_name:
-            conditions = [
-                f'{df_cond}_{f_cond}'
-                for df_cond in DIRECTED_FORGETTING_CONDITIONS
-                for f_cond in SHAPE_MATCHING_CONDITIONS
-            ]
-            return extend_metric_columns(base_columns, conditions)
         elif 'flanker' in task_name and 'shape_matching' in task_name:
             conditions = [
                 f'{f_cond}_{s_cond}'
@@ -126,6 +120,13 @@ def get_task_columns(task_name, sample_df=None):
                 f'{df_cond}_{g_cond}'
                 for df_cond in DIRECTED_FORGETTING_CONDITIONS
                 for g_cond in GO_NOGO_CONDITIONS
+            ]
+            return extend_metric_columns(base_columns, conditions)
+        elif 'directed_forgetting' in task_name and 'shape_matching' in task_name or 'directedForgetting' in task_name and 'shape_matching' in task_name:
+            conditions = [
+                f'{df_cond}_{s_cond}'
+                for df_cond in DIRECTED_FORGETTING_CONDITIONS
+                for s_cond in SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
             ]
             return extend_metric_columns(base_columns, conditions)
         elif 'flanker' in task_name and 'go_nogo' in task_name:
@@ -477,7 +478,7 @@ def get_task_metrics(df, task_name):
         elif ('directed_forgetting' in task_name and 'shape_matching' in task_name) or ('directedForgetting' in task_name and 'shape_matching' in task_name):
             conditions = {
                 'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS,
-                'shape_matching': SHAPE_MATCHING_CONDITIONS
+                'shape_matching': SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
             }
             condition_columns = {
                 'directed_forgetting': 'directed_forgetting_condition',
