@@ -511,17 +511,34 @@ def get_task_metrics(df, task_name):
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             metrics = {}
             for cond in SPATIAL_WITH_CUED_CONDITIONS:
-                mask_acc = (df['task_switch'] == cond)
-                mask_rt = (df['task_switch'] == cond) & (df['correct_trial'] == 1)
-                mask_omission = (df['task_switch'] == cond) & (df['key_press'] == -1)
-                mask_commission = (df['task_switch'] == cond) & (df['key_press'] != -1) & (df['correct_trial'] == 0)
-                num_omissions = len(df[mask_omission])
-                num_commissions = len(df[mask_commission])
-                total_num_trials = len(df[mask_acc])
-                metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
-                metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
-                metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials
-                metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials
+                # Parse condition like 'cuedtstaycstay_spatialtstaycstay'
+                try:
+                    cued_part, spatial_part = cond.split('_spatial')
+                    # Extract task and cue from cued part (e.g., 'cuedtstaycstay' -> 'tstay' and 'cstay')
+                    cued_task = cued_part[4:cued_part.index('c')]  # Extract 'tstay' from 'cuedtstaycstay'
+                    cued_cue = cued_part[cued_part.index('c'):]    # Extract 'cstay' from 'cuedtstaycstay'
+                    spatial_task = spatial_part[4:spatial_part.index('c')]  # Extract 'tstay' from 'spatialtstaycstay'
+                    spatial_cue = spatial_part[spatial_part.index('c'):]    # Extract 'cstay' from 'spatialtstaycstay'
+                    
+                    # Create mask for both cued and spatial parts
+                    mask_acc = (
+                        (df['cue_condition'] == cued_cue) & 
+                        (df['task_condition'] == cued_task) & 
+                        (df['task_switch'] == f't{spatial_task}_c{spatial_cue}')
+                    )
+                    mask_rt = mask_acc & (df['correct_trial'] == 1)
+                    mask_omission = mask_acc & (df['key_press'] == -1)
+                    mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+                    num_omissions = len(df[mask_omission])
+                    num_commissions = len(df[mask_commission])
+                    total_num_trials = len(df[mask_acc])
+                    metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
+                    metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
+                    metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+                    metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
+                except Exception as e:
+                    print(f"Error parsing condition {cond}: {e}")
+                    continue
             return metrics
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
             return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
