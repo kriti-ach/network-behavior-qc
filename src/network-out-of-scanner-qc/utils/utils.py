@@ -379,10 +379,22 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
             'subject_id': [subject_id],
             **metrics
         })
+        # Ensure new_row has the same columns as df
+        for col in df.columns:
+            if col not in new_row.columns:
+                new_row[col] = np.nan
+        # Reorder columns to match df
+        new_row = new_row[df.columns]
         df = pd.concat([df, new_row], ignore_index=True)
         if task_name == 'flanker_with_cued_task_switching' or task_name == 'shape_matching_with_cued_task_switching':
             df = df.drop(columns=[col for col in df.columns if 'tswitch_new_c' in col])
-        df = df.sort_values(by='subject_id', key=lambda x: x.str.extract('(\d+)').astype(int))
+        df['subject_id_numeric'] = df['subject_id'].str.replace('s', '').astype(int)
+        # Sort the DataFrame
+        df = df.sort_values(by='subject_id_numeric', ascending=True)
+
+        # Remove 'subject_id_numeric' and add the 's' back to 'subject_id'
+        df['subject_id'] = 's' + df['subject_id_numeric'].astype(str)
+        df = df.drop(columns=['subject_id_numeric'])
         df.to_csv(qc_file, index=False)
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found")
@@ -713,8 +725,8 @@ def get_task_metrics(df, task_name):
                     num_omissions = len(df[mask_omission])
                     num_commissions = len(df[mask_commission])
                     total_num_trials = len(df[mask_acc])
-                    metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean()
-                    metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean()
+                    metrics[f'{cond}_acc'] = df[mask_acc]['correct_trial'].mean() if len(df[mask_acc]) > 0 else np.nan
+                    metrics[f'{cond}_rt'] = df[mask_rt]['rt'].mean() if len(df[mask_rt]) > 0 else np.nan
                     metrics[f'{cond}_omission_rate'] = num_omissions / total_num_trials if total_num_trials > 0 else np.nan
                     metrics[f'{cond}_commission_rate'] = num_commissions / total_num_trials if total_num_trials > 0 else np.nan
                 except Exception as e:
