@@ -919,18 +919,9 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
                         n_back_condition = parts[0]
                         delay = parts[1].replace('back', '')
                         # Convert delay to float since df['delay'] contains floats
-                        try:
-                            delay_float = float(delay)
-                            paired_mask = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay_float)
-                        except ValueError:
-                            print(f"Could not convert delay '{delay}' to float for condition '{paired_cond}'")
-                            continue
-                        # check if any paired_mask is true
-                        if not paired_mask.any():
-                            print(f"No paired mask found for {paired_cond}")
-                            print(df['n_back_condition'].unique())
-                            print(df['delay'].unique())
-                            print(f"Looking for n_back_condition='{n_back_condition}' and delay={delay_float}")
+                        delay_float = float(delay)
+                        paired_mask = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay_float)
+
                     else:
                         continue
                 else:
