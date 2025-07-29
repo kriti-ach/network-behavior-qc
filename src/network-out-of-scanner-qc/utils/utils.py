@@ -732,19 +732,19 @@ def get_task_metrics(df, task_name):
             return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions)
         elif ('stop_signal' in task_name and 'flanker' in task_name) or ('stopSignal' in task_name and 'flanker' in task_name):
             paired_conditions = [c for c in df['flanker_condition'].unique() if pd.notna(c)]
-            return compute_stop_signal_metrics(df, paired_task_col='flanker_condition', paired_conditions=paired_conditions, stim_col='center_letter')
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='flanker_condition', paired_conditions=paired_conditions, stim_col='center_letter')
         elif ('stop_signal' in task_name and 'go_nogo' in task_name) or ('stopSignal' in task_name and 'go_nogo' in task_name):
             paired_conditions = [c for c in df['go_nogo_condition'].unique() if pd.notna(c)]
-            return compute_stop_signal_metrics(df, paired_task_col='go_nogo_condition', paired_conditions=paired_conditions, stim_col='go_nogo_stim')
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='go_nogo_condition', paired_conditions=paired_conditions, stim_col='go_nogo_stim')
         elif ('stop_signal' in task_name and 'shape_matching' in task_name) or ('stopSignal' in task_name and 'shape_matching' in task_name):
             paired_conditions = [c for c in df['shape_matching_condition'].unique() if pd.notna(c)]
-            return compute_stop_signal_metrics(df, paired_task_col='shape_matching_condition', paired_conditions=paired_conditions, stim_col='shape_matching_condition')
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='shape_matching_condition', paired_conditions=paired_conditions, stim_col='shape_matching_condition')
         elif ('stop_signal' in task_name and 'directed_forgetting' in task_name) or ('stopSignal' in task_name and 'directedForgetting' in task_name):
             paired_conditions = [c for c in df['directed_forgetting_condition'].unique() if pd.notna(c)]
-            return compute_stop_signal_metrics(df, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions, stim_col='directed_forgetting_condition')
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions, stim_col='directed_forgetting_condition')
         elif ('stop_signal' in task_name and 'spatial_task_switching' in task_name) or ('stopSignal' in task_name and 'spatialTS' in task_name):
             paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
-            return compute_stop_signal_metrics(df, paired_task_col='task_switch', paired_conditions=paired_conditions, stim_cols=['number', 'predictable_dimension'])
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='task_switch', paired_conditions=paired_conditions, stim_cols=['number', 'predictable_dimension'])
         elif ('stop_signal' in task_name and 'n_back' in task_name) or ('stopSignal' in task_name and 'NBack' in task_name):
             # Create combined conditions for n-back (e.g., "0_1back", "2_2back")
             paired_conditions = []
@@ -753,7 +753,7 @@ def get_task_metrics(df, task_name):
                     for delay in df['delay'].unique():
                         if pd.notna(delay):
                             paired_conditions.append(f"{n_back_condition}_{delay}back")
-            return compute_stop_signal_metrics(df, paired_task_col=None, paired_conditions=paired_conditions, stim_cols=['n_back_condition', 'delay'])
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col=None, paired_conditions=paired_conditions, stim_col='n_back_condition')
         # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
@@ -764,7 +764,7 @@ def get_task_metrics(df, task_name):
             return compute_cued_task_switching_metrics(df, CUED_TASK_SWITCHING_CONDITIONS, 'single')
         # Special handling for stop signal task
         elif 'stop_signal' in task_name:
-            return compute_stop_signal_metrics(df)
+            return compute_stop_signal_metrics(df, dual_task=False)
         # For other single tasks, we only need one set of conditions
         elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             conditions = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
@@ -861,7 +861,7 @@ def append_summary_rows_to_csv(csv_path):
         df.loc[len(df)] = values
     df.to_csv(csv_path, index=False)
 
-def compute_stop_signal_metrics(df, paired_task_col=None, paired_conditions=None, stim_col=None, stim_cols=[]):
+def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, paired_conditions=None, stim_col=None, stim_cols=[]):
     """
     Compute stop signal metrics for single stop signal tasks or dual tasks with stop signal.
     - df: DataFrame
@@ -871,7 +871,7 @@ def compute_stop_signal_metrics(df, paired_task_col=None, paired_conditions=None
     """
     metrics = {}
     
-    if paired_task_col is None:
+    if not dual_task:
         # Single stop signal task
         go_mask = (df['SS_trial_type'] == 'go')
         stop_mask = (df['SS_trial_type'] == 'stop')
