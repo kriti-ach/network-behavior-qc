@@ -258,6 +258,18 @@ def get_task_columns(task_name, sample_df=None):
                                 conditions.append(f"{condition_name}_stop_success")
                 return base_columns + conditions
             return base_columns
+        elif 'stop_signal' in task_name and 'cued_task_switching' in task_name or 'stopSignal' in task_name and 'CuedTS' in task_name:
+            if sample_df is not None:
+                for cue_condition, task_condition in zip(sample_df['cue_condition'].unique(), sample_df['task_condition'].unique()):
+                    if cue_condition == "stay" and task_condition == "switch":
+                        continue
+                    conditions.append(f"t{task_condition}_c{cue_condition}_go_rt")
+                    conditions.append(f"t{task_condition}_c{cue_condition}_stop_fail_rt")
+                    conditions.append(f"t{task_condition}_c{cue_condition}_go_acc")
+                    conditions.append(f"t{task_condition}_c{cue_condition}_stop_fail_acc")
+                    conditions.append(f"t{task_condition}_c{cue_condition}_stop_success")
+                return base_columns + conditions
+            return base_columns
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
@@ -754,6 +766,18 @@ def get_task_metrics(df, task_name):
                         if pd.notna(delay):
                             paired_conditions.append(f"{n_back_condition}_{delay}back")
             return compute_stop_signal_metrics(df, dual_task=True, paired_task_col=None, paired_conditions=paired_conditions, stim_col='n_back_condition')
+        elif ('stop_signal' in task_name and 'cued_task_switching' in task_name) or ('stopSignal' in task_name and 'CuedTS' in task_name):
+            # Create combined conditions for cued task switching (e.g., "tstay_cstay", "tstay_cswitch")
+            paired_conditions = []
+            for cue_condition in df['cue_condition'].unique():
+                if pd.notna(cue_condition):
+                    for task_condition in df['task_condition'].unique():
+                        if pd.notna(task_condition):
+                            # Skip the combination where cue is stay and task is switch
+                            if cue_condition == "stay" and task_condition == "switch":
+                                continue
+                            paired_conditions.append(f"t{task_condition}_c{cue_condition}")
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col=None, paired_conditions=paired_conditions, stim_cols=['stim_number', 'task'])
         # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
@@ -921,9 +945,12 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
                         # Convert delay to float since df['delay'] contains floats
                         delay_float = float(delay)
                         paired_mask = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay_float)
-
-                    else:
-                        continue
+                    
+                elif paired_cond.startswith('t') and '_c' in paired_cond:
+                    # Parse cued task switching condition like "tstay_cstay" -> task_condition="stay", cue_condition="stay"
+                    task_part = paired_cond[1:paired_cond.index('_c')]  # Extract "stay" from "tstay_cstay"
+                    cue_part = paired_cond[paired_cond.index('_c')+2:]  # Extract "stay" from "tstay_cstay"
+                    paired_mask = (df['task_condition'] == task_part) & (df['cue_condition'] == cue_part)
                 else:
                     continue
             
