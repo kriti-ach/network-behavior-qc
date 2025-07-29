@@ -243,6 +243,21 @@ def get_task_columns(task_name, sample_df=None):
                     conditions.append(f"{spatial_task_switching_condition}_stop_success")
                 return base_columns + conditions
             return base_columns
+        elif 'stop_signal' in task_name and 'n_back' in task_name or 'stopSignal' in task_name and 'NBack' in task_name:
+            if sample_df is not None:
+                conditions = []
+                for n_back_condition in sample_df['n_back_condition'].unique():
+                    if pd.notna(n_back_condition):
+                        for delay in sample_df['delay'].unique():
+                            if pd.notna(delay):
+                                condition_name = f"{n_back_condition}_{delay}back"
+                                conditions.append(f"{condition_name}_go_rt")
+                                conditions.append(f"{condition_name}_stop_fail_rt")
+                                conditions.append(f"{condition_name}_go_acc")
+                                conditions.append(f"{condition_name}_stop_fail_acc")
+                                conditions.append(f"{condition_name}_stop_success")
+                return base_columns + conditions
+            return base_columns
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             return extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
@@ -730,6 +745,15 @@ def get_task_metrics(df, task_name):
         elif ('stop_signal' in task_name and 'spatial_task_switching' in task_name) or ('stopSignal' in task_name and 'spatialTS' in task_name):
             paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
             return compute_stop_signal_metrics(df, paired_task_col='task_switch', paired_conditions=paired_conditions, stim_cols=['number', 'predictable_dimension'])
+        elif ('stop_signal' in task_name and 'n_back' in task_name) or ('stopSignal' in task_name and 'NBack' in task_name):
+            # Create combined conditions for n-back (e.g., "0_1back", "2_2back")
+            paired_conditions = []
+            for n_back_condition in df['n_back_condition'].unique():
+                if pd.notna(n_back_condition):
+                    for delay in df['delay'].unique():
+                        if pd.notna(delay):
+                            paired_conditions.append(f"{n_back_condition}_{delay}back")
+            return compute_stop_signal_metrics(df, paired_task_col=None, paired_conditions=paired_conditions, stim_cols=['n_back_condition', 'delay'])
         # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
@@ -884,7 +908,21 @@ def compute_stop_signal_metrics(df, paired_task_col=None, paired_conditions=None
         # Dual stop signal task
         for paired_cond in paired_conditions:
             # Filter for the paired task condition
-            paired_mask = df[paired_task_col] == paired_cond
+            if paired_task_col is not None:
+                paired_mask = df[paired_task_col] == paired_cond
+            else:
+                # For combined conditions like n-back, parse the condition name
+                if 'back' in paired_cond:
+                    # Parse n-back condition like "0_1back" -> n_back_condition="0", delay="1"
+                    parts = paired_cond.split('_')
+                    if len(parts) >= 2:
+                        n_back_condition = parts[0]
+                        delay = parts[1].replace('back', '')
+                        paired_mask = (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay)
+                    else:
+                        continue
+                else:
+                    continue
             
             go_mask = (df['SS_trial_type'] == 'go') & paired_mask
             stop_mask = (df['SS_trial_type'] == 'stop') & paired_mask
