@@ -263,6 +263,8 @@ def get_task_columns(task_name, sample_df=None):
                 for cue_condition, task_condition in zip(sample_df['cue_condition'].unique(), sample_df['task_condition'].unique()):
                     if cue_condition == "stay" and task_condition == "switch":
                         continue
+                    elif cue_condition == "na" and task_condition == "na":
+                        continue
                     conditions.append(f"t{task_condition}_c{cue_condition}_go_rt")
                     conditions.append(f"t{task_condition}_c{cue_condition}_stop_fail_rt")
                     conditions.append(f"t{task_condition}_c{cue_condition}_go_acc")
