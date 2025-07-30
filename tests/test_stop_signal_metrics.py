@@ -1,0 +1,269 @@
+import pandas as pd
+import numpy as np
+import pytest
+from src.network_out_of_scanner_qc.utils.utils import (
+    calculate_single_stop_signal_metrics,
+    calculate_stop_signal_ssd_stats,
+    calculate_dual_stop_signal_condition_metrics,
+    parse_dual_task_condition,
+    compute_stop_signal_metrics,
+    get_go_trials_rt,
+    get_stop_trials_info,
+    get_nth_rt,
+    compute_SSRT
+)
+
+class TestStopSignalMetrics:
+    """Test stop signal metric calculation functions."""
+    
+    def setup_method(self):
+        """Set up test data."""
+        # Create sample stop signal data
+        self.df = pd.DataFrame({
+            'SS_trial_type': ['go', 'go', 'stop', 'go', 'stop', 'go', 'stop', 'go'],
+            'correct_trial': [1, 1, 0, 1, 0, 1, 1, 1],  # Stop failures are incorrect
+            'rt': [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, np.nan, 1.2],  # Stop success has no RT
+            'key_press': [1, 1, 2, 1, 2, 1, -1, 1],  # -1 for stop success
+            'SS_delay': [np.nan, np.nan, 0.2, np.nan, 0.3, np.nan, 0.4, np.nan],
+            'stim': ['A', 'B', 'A', 'B', 'A', 'B', 'A', 'B'],
+            'correct_response': [1, 2, 1, 2, 1, 2, 1, 2]
+        })
+        
+    def test_calculate_single_stop_signal_metrics(self):
+        """Test single stop signal metrics calculation."""
+        metrics = calculate_single_stop_signal_metrics(self.df)
+        
+        # Check that all expected metrics are present
+        expected_keys = ['go_rt', 'stop_fail_rt', 'go_acc', 'stop_fail_acc', 'stop_success']
+        for key in expected_keys:
+            assert key in metrics
+        
+        # Check go RT (mean of go trial RTs: 0.5, 0.6, 0.8, 1.0, 1.2)
+        expected_go_rt = np.mean([0.5, 0.6, 0.8, 1.0, 1.2])
+        assert metrics['go_rt'] == pytest.approx(expected_go_rt)
+        
+        # Check stop failure RT (mean of stop failure RTs: 0.7, 0.9)
+        expected_stop_fail_rt = np.mean([0.7, 0.9])
+        assert metrics['stop_fail_rt'] == pytest.approx(expected_stop_fail_rt)
+        
+        # Check go accuracy (all go trials correct: 5/5)
+        assert metrics['go_acc'] == 1.0
+        
+        # Check stop success rate (1 success out of 3 stop trials)
+        assert metrics['stop_success'] == pytest.approx(1/3)
+        
+    def test_calculate_stop_signal_ssd_stats(self):
+        """Test SSD statistics calculation."""
+        metrics = calculate_stop_signal_ssd_stats(self.df)
+        
+        # Check that all expected metrics are present
+        expected_keys = ['avg_ssd', 'min_ssd', 'max_ssd', 'min_ssd_count', 'max_ssd_count']
+        for key in expected_keys:
+            assert key in metrics
+        
+        # Check SSD values (0.2, 0.3, 0.4)
+        assert metrics['avg_ssd'] == pytest.approx(0.3)
+        assert metrics['min_ssd'] == pytest.approx(0.2)
+        assert metrics['max_ssd'] == pytest.approx(0.4)
+        assert metrics['min_ssd_count'] == 1
+        assert metrics['max_ssd_count'] == 1
+        
+    def test_calculate_dual_stop_signal_condition_metrics(self):
+        """Test dual stop signal condition metrics."""
+        # Create test data with paired task condition
+        df_dual = pd.DataFrame({
+            'SS_trial_type': ['go', 'go', 'stop', 'go', 'stop'],
+            'correct_trial': [1, 1, 0, 1, 0],
+            'rt': [0.5, 0.6, 0.7, 0.8, 0.9],
+            'key_press': [1, 1, 2, 1, 2],
+            'flanker_condition': ['congruent', 'congruent', 'congruent', 'incongruent', 'incongruent'],
+            'stim': ['A', 'B', 'A', 'B', 'A'],
+            'correct_response': [1, 2, 1, 2, 1]
+        })
+        
+        # Test with single stimulus column
+        paired_mask = df_dual['flanker_condition'] == 'congruent'
+        metrics = calculate_dual_stop_signal_condition_metrics(
+            df_dual, 'congruent', paired_mask, stim_col='stim'
+        )
+        
+        # Check that metrics are calculated for the condition
+        assert 'congruent_go_rt' in metrics
+        assert 'congruent_stop_fail_rt' in metrics
+        assert 'congruent_go_acc' in metrics
+        assert 'congruent_stop_fail_acc' in metrics
+        assert 'congruent_stop_success' in metrics
+        
+        # Check values
+        assert metrics['congruent_go_rt'] == pytest.approx(np.mean([0.5, 0.6]))
+        assert metrics['congruent_go_acc'] == 1.0
+        assert metrics['congruent_stop_success'] == pytest.approx(1/2)  # 1 success out of 2 stop trials
+        
+    def test_parse_dual_task_condition(self):
+        """Test dual task condition parsing."""
+        # Test simple condition
+        mask_func, args = parse_dual_task_condition('congruent', 'flanker_condition')
+        assert mask_func is not None
+        assert args is None
+        
+        # Test n-back condition
+        mask_func, args = parse_dual_task_condition('0_1back', None)
+        assert mask_func is not None
+        assert args is None
+        
+        # Test cued task switching condition
+        mask_func, args = parse_dual_task_condition('tstay_cstay', None)
+        assert mask_func is not None
+        assert args is None
+        
+        # Test invalid condition
+        mask_func, args = parse_dual_task_condition('invalid', None)
+        assert mask_func is None
+        assert args is None
+        
+    def test_get_go_trials_rt(self):
+        """Test go trial RT extraction."""
+        # Test with test phase
+        df_with_phase = self.df.copy()
+        df_with_phase['Phase'] = ['test', 'test', 'test', 'test', 'test', 'test', 'test', 'test']
+        
+        sorted_rt = get_go_trials_rt(df_with_phase)
+        expected_rt = pd.Series([0.5, 0.6, 0.8, 1.0, 1.2]).sort_values(ignore_index=True)
+        pd.testing.assert_series_equal(sorted_rt, expected_rt)
+        
+        # Test with missing RT values (should be filled with max_go_rt)
+        df_missing = self.df.copy()
+        df_missing.loc[0, 'rt'] = np.nan
+        sorted_rt = get_go_trials_rt(df_missing, max_go_rt=2.0)
+        assert len(sorted_rt) == 5
+        assert 2.0 in sorted_rt.values
+        
+    def test_get_stop_trials_info(self):
+        """Test stop trial information extraction."""
+        p_respond, avg_ssd = get_stop_trials_info(self.df)
+        
+        # Check probability of responding (2 failures out of 3 stop trials)
+        assert p_respond == pytest.approx(2/3)
+        
+        # Check average SSD
+        assert avg_ssd == pytest.approx(0.3)
+        
+        # Test with no stop trials
+        df_no_stop = self.df[self.df['SS_trial_type'] == 'go']
+        p_respond, avg_ssd = get_stop_trials_info(df_no_stop)
+        assert p_respond == 0.0
+        assert np.isnan(avg_ssd)
+        
+    def test_get_nth_rt(self):
+        """Test nth RT calculation."""
+        sorted_rt = pd.Series([0.1, 0.2, 0.3, 0.4, 0.5])
+        
+        # Test middle value
+        nth_rt = get_nth_rt(sorted_rt, 0.5)
+        assert nth_rt == pytest.approx(0.3)
+        
+        # Test edge cases
+        nth_rt = get_nth_rt(sorted_rt, 0.0)
+        assert nth_rt == pytest.approx(0.1)
+        
+        nth_rt = get_nth_rt(sorted_rt, 1.0)
+        assert nth_rt == pytest.approx(0.5)
+        
+        # Test empty series
+        nth_rt = get_nth_rt(pd.Series([]), 0.5)
+        assert np.isnan(nth_rt)
+        
+    def test_compute_SSRT(self):
+        """Test SSRT calculation."""
+        ssrt = compute_SSRT(self.df)
+        
+        # SSRT = nth_rt - avg_ssd
+        # nth_rt = 0.6 (2nd RT out of 5, p_respond = 2/3)
+        # avg_ssd = 0.3
+        # Expected SSRT = 0.6 - 0.3 = 0.3
+        expected_ssrt = 0.6 - 0.3
+        assert ssrt == pytest.approx(expected_ssrt)
+        
+        # Test with no go trials
+        df_no_go = self.df[self.df['SS_trial_type'] == 'stop']
+        ssrt = compute_SSRT(df_no_go)
+        assert np.isnan(ssrt)
+        
+    def test_compute_stop_signal_metrics_single(self):
+        """Test complete stop signal metrics for single task."""
+        metrics = compute_stop_signal_metrics(self.df, dual_task=False)
+        
+        # Check that all expected metrics are present
+        expected_keys = ['go_rt', 'stop_fail_rt', 'go_acc', 'stop_fail_acc', 
+                        'stop_success', 'avg_ssd', 'min_ssd', 'max_ssd', 
+                        'min_ssd_count', 'max_ssd_count', 'ssrt']
+        for key in expected_keys:
+            assert key in metrics
+        
+    def test_compute_stop_signal_metrics_dual(self):
+        """Test complete stop signal metrics for dual task."""
+        # Create dual task data
+        df_dual = pd.DataFrame({
+            'SS_trial_type': ['go', 'go', 'stop', 'go', 'stop'],
+            'correct_trial': [1, 1, 0, 1, 0],
+            'rt': [0.5, 0.6, 0.7, 0.8, 0.9],
+            'key_press': [1, 1, 2, 1, 2],
+            'flanker_condition': ['congruent', 'congruent', 'congruent', 'incongruent', 'incongruent'],
+            'SS_delay': [np.nan, np.nan, 0.2, np.nan, 0.3],
+            'stim': ['A', 'B', 'A', 'B', 'A'],
+            'correct_response': [1, 2, 1, 2, 1]
+        })
+        
+        paired_conditions = ['congruent', 'incongruent']
+        metrics = compute_stop_signal_metrics(
+            df_dual, dual_task=True, paired_task_col='flanker_condition', 
+            paired_conditions=paired_conditions, stim_col='stim'
+        )
+        
+        # Check that metrics are calculated for each condition
+        for condition in paired_conditions:
+            assert f'{condition}_go_rt' in metrics
+            assert f'{condition}_stop_fail_rt' in metrics
+            assert f'{condition}_go_acc' in metrics
+            assert f'{condition}_stop_fail_acc' in metrics
+            assert f'{condition}_stop_success' in metrics
+        
+        # Check that global metrics are present
+        assert 'avg_ssd' in metrics
+        assert 'ssrt' in metrics
+        
+    def test_edge_cases(self):
+        """Test edge cases and error handling."""
+        # Test with empty DataFrame
+        empty_df = pd.DataFrame(columns=['SS_trial_type', 'correct_trial', 'rt', 'key_press'])
+        
+        metrics = calculate_single_stop_signal_metrics(empty_df)
+        assert all(np.isnan(v) for v in metrics.values())
+        
+        ssd_stats = calculate_stop_signal_ssd_stats(empty_df)
+        assert all(np.isnan(v) for v in ssd_stats.values())
+        
+        # Test with all NaN values
+        nan_df = pd.DataFrame({
+            'SS_trial_type': ['go', 'stop'],
+            'correct_trial': [np.nan, np.nan],
+            'rt': [np.nan, np.nan],
+            'key_press': [np.nan, np.nan],
+            'SS_delay': [np.nan, np.nan]
+        })
+        
+        metrics = calculate_single_stop_signal_metrics(nan_df)
+        assert all(np.isnan(v) for v in metrics.values())
+        
+        # Test with no stop trials
+        df_no_stop = self.df[self.df['SS_trial_type'] == 'go']
+        metrics = compute_stop_signal_metrics(df_no_stop, dual_task=False)
+        assert np.isnan(metrics['ssrt'])
+        
+        # Test with no go trials
+        df_no_go = self.df[self.df['SS_trial_type'] == 'stop']
+        metrics = compute_stop_signal_metrics(df_no_go, dual_task=False)
+        assert np.isnan(metrics['ssrt'])
+
+if __name__ == "__main__":
+    pytest.main([__file__]) 
