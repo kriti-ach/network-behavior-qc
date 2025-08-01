@@ -1038,13 +1038,13 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     # Accuracies
     metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
 
+    go_trials = df[go_mask]
     # Go omission rate
     metrics[f'{paired_cond}_go_omission_rate'] = len(go_trials[go_trials['key_press'] == -1]) / len(go_trials)
     metrics[f'{paired_cond}_go_commission_rate'] = len(go_trials[go_trials['key_press'] != -1] & (go_trials['correct_trial'] == 0)) / len(go_trials)
     
     # Stop failure accuracy based on stimulus-response mapping from go trials
     if stim_col is not None:
-        go_trials = df[go_mask]
         if not go_trials.empty:
             stim_to_resp = (
                 go_trials.groupby(stim_col)['correct_response']
@@ -1063,7 +1063,6 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
         else:
             metrics[f'{paired_cond}_stop_fail_acc'] = np.nan
     elif stim_cols is not None:
-        go_trials = df[go_mask]
         if not go_trials.empty:
             # Group by multiple stimulus columns
             stim_to_resp = (
