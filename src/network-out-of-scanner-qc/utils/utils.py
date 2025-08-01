@@ -267,7 +267,7 @@ def get_task_columns(task_name, sample_df=None):
                 'go_rt',
                 'stop_fail_rt',
                 'go_acc',
-                'stop_failure_acc',
+                'stop_fail_acc',
                 'stop_success',
                 'avg_ssd',
                 'min_ssd',
@@ -523,8 +523,6 @@ def compute_cued_task_switching_metrics(
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
-            else:
-                continue
         except Exception as e:
             print(f"Skipping malformed condition: {cond} ({e})")
             continue
@@ -574,7 +572,6 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                 condition = f"{n_back_condition}_{delay}back"
                 mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay)
                 calculate_basic_metrics(df, mask_acc, condition, metrics)
-    else:
         # Dual n-back: iterate over n_back_condition, delay, and paired task conditions
         for n_back_condition in df['n_back_condition'].str.lower().unique():
             if pd.isna(n_back_condition):
