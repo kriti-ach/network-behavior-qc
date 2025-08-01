@@ -124,7 +124,9 @@ def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=F
             f"{condition}_stop_fail_rt",
             f"{condition}_go_acc",
             f"{condition}_stop_fail_acc",
-            f"{condition}_stop_success"
+            f"{condition}_stop_success",
+            f"{condition}_go_omission_rate",
+            f"{condition}_go_commission_rate"
         ])
     
     if include_nogo_commission:
@@ -269,6 +271,8 @@ def get_task_columns(task_name, sample_df=None):
                 'go_acc',
                 'stop_fail_acc',
                 'stop_success',
+                'go_omission_rate',
+                'go_commission_rate',
                 'avg_ssd',
                 'min_ssd',
                 'max_ssd',
@@ -967,6 +971,10 @@ def calculate_single_stop_signal_metrics(df):
         .to_dict()
     )
 
+    # Go omission rate
+    metrics['go_omission_rate'] = len(go_trials[go_trials['key_press'] == -1]) / len(go_trials)
+    metrics['go_commission_rate'] = len(go_trials[go_trials['key_press'] != -1] & (go_trials['correct_trial'] == 0)) / len(go_trials)
+
     stop_fail_with_resp = df[stop_fail_mask & (df['key_press'] != -1)]
     if not stop_fail_with_resp.empty:
         stop_fail_with_resp = stop_fail_with_resp.copy()
@@ -1029,6 +1037,10 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
 
     # Accuracies
     metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
+
+    # Go omission rate
+    metrics[f'{paired_cond}_go_omission_rate'] = len(go_trials[go_trials['key_press'] == -1]) / len(go_trials)
+    metrics[f'{paired_cond}_go_commission_rate'] = len(go_trials[go_trials['key_press'] != -1] & (go_trials['correct_trial'] == 0)) / len(go_trials)
     
     # Stop failure accuracy based on stimulus-response mapping from go trials
     if stim_col is not None:
