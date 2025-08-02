@@ -62,14 +62,15 @@ def extend_go_nogo_metric_columns(base_columns, conditions):
     
     Args:
         base_columns (list): Base columns (e.g., ['subject_id'])
-        conditions (list): List of go_nogo conditions (e.g., ['go', 'nogo'])
+        conditions (list): List of go_nogo conditions (e.g., ['go', 'nogo'] or ['flanker_go', 'flanker_nogo'])
         
     Returns:
         list: Extended list of columns with appropriate metrics for each condition
     """
     columns = base_columns.copy()
     for cond in conditions:
-        if 'nogo' in cond.lower():
+        # Check if this condition ends with 'nogo' or contains '_nogo_'
+        if cond.endswith('_nogo') or '_nogo_' in cond or cond == 'nogo':
             # For nogo: only acc and rt
             columns.extend([f'{cond}_acc', f'{cond}_rt'])
         else:
@@ -498,7 +499,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
         None: Updates metrics_dict in place
     """
     # Check if this is a nogo condition
-    is_nogo = 'nogo' in cond_name.lower()
+    is_nogo = cond_name.endswith('_nogo') or '_nogo_' in cond_name or cond_name == 'nogo'
     
     if is_nogo:
         # For nogo: only calculate RT for commission errors (incorrect responses)
@@ -1326,7 +1327,6 @@ def compute_SSRT(df, max_go_rt=2000):
     
     # Calculate SSRT
     if avg_SSD is not None and not np.isnan(avg_SSD) and not np.isnan(nth_rt):
-        print(f"nth_rt: {nth_rt}, avg_SSD: {avg_SSD}")
         return nth_rt - avg_SSD
     else:
         return np.nan
