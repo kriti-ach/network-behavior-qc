@@ -1258,6 +1258,7 @@ def compute_SSRT(df, max_go_rt=2000):
     
     # Calculate SSRT
     if avg_SSD is not None and not np.isnan(avg_SSD) and not np.isnan(nth_rt):
+        print(f"nth_rt: {nth_rt}, avg_SSD: {avg_SSD}")
         return nth_rt - avg_SSD
     else:
         return np.nan
