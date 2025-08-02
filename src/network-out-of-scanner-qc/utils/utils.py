@@ -54,6 +54,29 @@ def extend_metric_columns(base_columns, conditions):
         for metric in metric_types
     ]
 
+def extend_go_nogo_metric_columns(base_columns, conditions):
+    """
+    Extend base columns with accuracy and RT metrics for go_nogo tasks.
+    For nogo conditions: only acc and rt (no omission/commission rates)
+    For go conditions: all metrics (acc, rt, omission_rate, commission_rate)
+    
+    Args:
+        base_columns (list): Base columns (e.g., ['subject_id'])
+        conditions (list): List of go_nogo conditions (e.g., ['go', 'nogo'])
+        
+    Returns:
+        list: Extended list of columns with appropriate metrics for each condition
+    """
+    columns = base_columns.copy()
+    for cond in conditions:
+        if 'nogo' in cond.lower():
+            # For nogo: only acc and rt
+            columns.extend([f'{cond}_acc', f'{cond}_rt'])
+        else:
+            # For go: all metrics
+            columns.extend([f'{cond}_acc', f'{cond}_rt', f'{cond}_omission_rate', f'{cond}_commission_rate'])
+    return columns
+
 def get_dual_n_back_columns(base_columns, sample_df, paired_col=None, cuedts=False):
     """
     Generate columns for dual n-back tasks (n-back paired with another task).
@@ -200,16 +223,16 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, conditions)
         elif 'flanker' in task_name and 'go_nogo' in task_name:
             conditions = create_dual_task_conditions(FLANKER_CONDITIONS, GO_NOGO_CONDITIONS)
-            return extend_metric_columns(base_columns, conditions)
+            return extend_go_nogo_metric_columns(base_columns, conditions)
         elif 'directed_forgetting' in task_name and 'go_nogo' in task_name:
             conditions = create_dual_task_conditions(DIRECTED_FORGETTING_CONDITIONS, GO_NOGO_CONDITIONS)
-            return extend_metric_columns(base_columns, conditions)
+            return extend_go_nogo_metric_columns(base_columns, conditions)
         elif 'directed_forgetting' in task_name and 'shape_matching' in task_name or 'directedForgetting' in task_name and 'shape_matching' in task_name:
             conditions = create_dual_task_conditions(DIRECTED_FORGETTING_CONDITIONS, SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING)
             return extend_metric_columns(base_columns, conditions)
         elif 'go_nogo' in task_name and 'shape_matching' in task_name:
             conditions = create_dual_task_conditions(GO_NOGO_CONDITIONS, SHAPE_MATCHING_CONDITIONS)
-            return extend_metric_columns(base_columns, conditions)
+            return extend_go_nogo_metric_columns(base_columns, conditions)
         elif 'directed_forgetting' in task_name and 'spatial_task_switching' in task_name or 'directedForgetting' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, DIRECTED_FORGETTING_CONDITIONS)
             return extend_metric_columns(base_columns, conditions)
@@ -218,7 +241,7 @@ def get_task_columns(task_name, sample_df=None):
             return extend_metric_columns(base_columns, conditions)
         elif 'go_nogo' in task_name and 'spatial_task_switching' in task_name or 'go_nogo' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, GO_NOGO_CONDITIONS)
-            return extend_metric_columns(base_columns, conditions)
+            return extend_go_nogo_metric_columns(base_columns, conditions)
         elif 'shape_matching' in task_name and 'spatial_task_switching' in task_name or 'shape_matching' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, SHAPE_MATCHING_CONDITIONS)
             return extend_metric_columns(base_columns, conditions)
@@ -227,7 +250,7 @@ def get_task_columns(task_name, sample_df=None):
         elif 'flanker' in task_name and 'cued_task_switching' in task_name or 'flanker' in task_name and 'CuedTS' in task_name:
             return extend_metric_columns(base_columns, FLANKER_WITH_CUED_CONDITIONS)
         elif 'go_nogo' in task_name and 'cued_task_switching' in task_name or 'go_nogo' in task_name and 'CuedTS' in task_name:
-            return extend_metric_columns(base_columns, GO_NOGO_WITH_CUED_CONDITIONS)
+            return extend_go_nogo_metric_columns(base_columns, GO_NOGO_WITH_CUED_CONDITIONS)
         elif 'shape_matching' in task_name and 'cued_task_switching' in task_name or 'shape_matching' in task_name and 'CuedTS' in task_name:
             return extend_metric_columns(base_columns, SHAPE_MATCHING_WITH_CUED_CONDITIONS)
         elif 'directed_forgetting' in task_name and 'cued_task_switching' in task_name or 'directedForgetting' in task_name and 'CuedTS' in task_name:
@@ -282,7 +305,7 @@ def get_task_columns(task_name, sample_df=None):
             ]
             return columns
         elif 'go_nogo' in task_name:
-            return extend_metric_columns(base_columns, GO_NOGO_CONDITIONS)
+            return extend_go_nogo_metric_columns(base_columns, GO_NOGO_CONDITIONS)
         elif 'shape_matching' in task_name:
             return extend_metric_columns(base_columns, SHAPE_MATCHING_CONDITIONS)
         else:
@@ -459,6 +482,42 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
     metrics_dict[f'{cond_name}_commission_rate'] = calculate_commission_rate(df, mask_commission, total_num_trials)
 
+def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
+    """
+    Calculate go_nogo metrics with special handling for nogo condition.
+    For nogo: only calculate RT for commission errors, no omission/commission rates.
+    For go: calculate all metrics normally.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing task data
+        mask_acc (pd.Series): Boolean mask for accuracy calculation
+        cond_name (str): Condition name for metric keys
+        metrics_dict (dict): Dictionary to store metrics
+        
+    Returns:
+        None: Updates metrics_dict in place
+    """
+    # Check if this is a nogo condition
+    is_nogo = 'nogo' in cond_name.lower()
+    
+    if is_nogo:
+        # For nogo: only calculate RT for commission errors (incorrect responses)
+        mask_rt = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+        metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
+        metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
+        # Don't calculate omission_rate or commission_rate for nogo
+    else:
+        # For go: calculate all metrics normally
+        mask_rt = mask_acc & (df['correct_trial'] == 1)
+        mask_omission = mask_acc & (df['key_press'] == -1)
+        mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+        total_num_trials = len(df[mask_acc])
+        
+        metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
+        metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
+        metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
+        metrics_dict[f'{cond_name}_commission_rate'] = calculate_commission_rate(df, mask_commission, total_num_trials)
+
 def compute_cued_task_switching_metrics(
     df,
     condition_list,
@@ -506,7 +565,7 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                calculate_basic_metrics(df, mask_acc, cond, metrics)
+                calculate_go_nogo_metrics(df, mask_acc, cond, metrics)
             elif condition_type == 'shape_matching':
                 # cond format: {shape_matching}_t{task}_c{cue}
                 shape_matching, t_part = cond.split('_t')
@@ -576,8 +635,8 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                 condition = f"{n_back_condition}_{delay}back"
                 mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay)
                 calculate_basic_metrics(df, mask_acc, condition, metrics)
-        # Dual n-back: iterate over n_back_condition, delay, and paired task conditions
     else:
+        # Dual n-back: iterate over n_back_condition, delay, and paired task conditions
         for n_back_condition in df['n_back_condition'].str.lower().unique():
             if pd.isna(n_back_condition):
                 continue
@@ -905,13 +964,21 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
             for cond2 in conditions[task2]:
                 mask_acc = df[condition_columns[task1]].str.contains(cond1, case=False, na=False) & \
                            df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
-                calculate_basic_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+                # Check if this is a go_nogo task
+                if 'go_nogo' in task1 or 'go_nogo' in task2:
+                    calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+                else:
+                    calculate_basic_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
     else:
         # For single tasks, just iterate through conditions
         task = list(conditions.keys())[0]
         for cond in conditions[task]:
             mask_acc = (df[condition_columns[task]] == cond)
-            calculate_basic_metrics(df, mask_acc, cond, metrics)
+            # Check if this is a go_nogo task
+            if 'go_nogo' in task:
+                calculate_go_nogo_metrics(df, mask_acc, cond, metrics)
+            else:
+                calculate_basic_metrics(df, mask_acc, cond, metrics)
     
     return metrics
 
