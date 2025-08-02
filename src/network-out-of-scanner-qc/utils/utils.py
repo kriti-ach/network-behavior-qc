@@ -645,6 +645,8 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
         return metrics
     elif gonogo:
         for n_back_condition in df['n_back_condition'].str.lower().unique():
+            if pd.isna(n_back_condition):
+                continue
             for delay in df['delay'].unique():
                 for paired_condition in paired_conditions:
                     col_prefix = f"{n_back_condition}_{delay}back_{paired_condition}"
