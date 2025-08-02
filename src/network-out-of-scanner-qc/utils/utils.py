@@ -1207,7 +1207,7 @@ def get_stop_trials_info(df):
     if len(stop_df) == 0:
         return 0.0, np.nan
     
-    stop_failure = stop_df[stop_df['rt'].notna()]
+    stop_failure = stop_df[stop_df['rt'] > 0]
     p_respond = len(stop_failure) / len(stop_df)
     avg_SSD = stop_df['SS_delay'].mean()
     
