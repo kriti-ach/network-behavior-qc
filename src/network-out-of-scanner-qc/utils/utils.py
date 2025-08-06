@@ -1130,10 +1130,32 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     stop_fail_mask = stop_mask & (df['correct_trial'] == 0)
     stop_succ_mask = stop_mask & (df['correct_trial'] == 1)
 
-    # RTs
-    metrics[f'{paired_cond}_go_rt'] = df.loc[go_mask & (df['rt'].notna()), 'rt'].mean()
-    metrics[f'{paired_cond}_stop_fail_rt'] = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt'].mean()
-    print(f'{paired_cond}_stop_fail_rt: {metrics[f"{paired_cond}_stop_fail_rt"]}')
+    if stim_cols != []
+        # Debug information
+        print(f'DEBUG {paired_cond}:')
+        print(f'  Total trials with paired_mask: {paired_mask.sum()}')
+        print(f'  Go trials: {go_mask.sum()}')
+        print(f'  Stop trials: {stop_mask.sum()}')
+        print(f'  Stop fail trials: {stop_fail_mask.sum()}')
+        print(f'  Stop success trials: {stop_succ_mask.sum()}')
+        print(f'  Stop fail trials with valid RT: {(stop_fail_mask & (df['rt'].notna())).sum()}')
+        
+        # Check the data structure for stop trials
+        if stop_mask.sum() > 0:
+            stop_trials = df[stop_mask]
+            print(f'  Stop trial correct_trial values: {stop_trials['correct_trial'].value_counts().to_dict()}')
+            print(f'  Stop trial SS_trial_type values: {stop_trials['SS_trial_type'].value_counts().to_dict()}')
+            print(f'  Stop trial rt values (first 10): {stop_trials['rt'].head(10).values}')
+        
+        if (stop_fail_mask & (df['rt'].notna())).sum() > 0:
+            stop_fail_rts = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt']
+            print(f'  Stop fail RTs: {stop_fail_rts.values}')
+            print(f'  Stop fail RT range: {stop_fail_rts.min()} - {stop_fail_rts.max()}')
+
+        # RTs
+        metrics[f'{paired_cond}_go_rt'] = df.loc[go_mask & (df['rt'].notna()), 'rt'].mean()
+        metrics[f'{paired_cond}_stop_fail_rt'] = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt'].mean()
+        print(f'{paired_cond}_stop_fail_rt: {metrics[f"{paired_cond}_stop_fail_rt"]}')
 
     # Accuracies
     metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
@@ -1203,11 +1225,15 @@ def parse_dual_task_condition(paired_cond, paired_task_col):
     Returns:
         tuple: (mask_function, args) for creating the mask
     """
+    print(f'  parse_dual_task_condition: paired_cond="{paired_cond}", paired_task_col="{paired_task_col}"')
+    
     if paired_task_col is not None:
+        print(f'  Using paired_task_col approach')
         return lambda df: df[paired_task_col] == paired_cond, None
     else:
         # For combined conditions like n-back, parse the condition name
         if 'back' in paired_cond:
+            print(f'  Parsing n-back condition')
             # Parse n-back condition like "0_1back" -> n_back_condition="0", delay="1"
             parts = paired_cond.split('_')
             if len(parts) >= 2:
@@ -1215,13 +1241,17 @@ def parse_dual_task_condition(paired_cond, paired_task_col):
                 delay = parts[1].replace('back', '')
                 # Convert delay to float since df['delay'] contains floats
                 delay_float = float(delay)
+                print(f'    n_back_condition="{n_back_condition}", delay={delay_float}')
                 return lambda df: (df['n_back_condition'] == n_back_condition) & (df['delay'] == delay_float), None
         elif paired_cond.startswith('t') and '_c' in paired_cond:
+            print(f'  Parsing cued task switching condition')
             # Parse cued task switching condition like "tstay_cstay" -> task_condition="stay", cue_condition="stay"
             task_part = paired_cond[1:paired_cond.index('_c')]  # Extract "stay" from "tstay_cstay"
             cue_part = paired_cond[paired_cond.index('_c')+2:]  # Extract "stay" from "tstay_cstay"
+            print(f'    task_part="{task_part}", cue_part="{cue_part}"')
             return lambda df: (df['task_condition'] == task_part) & (df['cue_condition'] == cue_part), None
         else:
+            print(f'  No parsing pattern matched for "{paired_cond}"')
             return None, None
 
 def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, paired_conditions=None, stim_col=None, stim_cols=[]):
@@ -1252,12 +1282,15 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
         metrics = {}
         
         for paired_cond in paired_conditions:
+            print(f'Processing paired condition: "{paired_cond}"')
             # Parse condition and create mask
             mask_func, args = parse_dual_task_condition(paired_cond, paired_task_col)
             if mask_func is None:
+                print(f'  WARNING: Could not parse condition "{paired_cond}"')
                 continue
                 
             paired_mask = mask_func(df)
+            print(f'  paired_mask sum: {paired_mask.sum()}')
 
             if stim_cols != []:
                 print(f'stim_cols: {stim_cols}')
