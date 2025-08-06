@@ -1135,7 +1135,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_stop_fail_rt'] = df.loc[stop_fail_mask & (df['rt'].notna()) & (df['rt'] > 0), 'rt'].mean()
 
     # Accuracies
-    metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask & (df['key_press'] == df['correct_response'])].mean()
+    metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, df['key_press'] == df['correct_response']].mean()
     go_trials = df[go_mask]
     # Go omission rate
     mask_omission = go_mask & (df['key_press'] == -1)
