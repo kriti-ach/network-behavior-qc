@@ -1133,6 +1133,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     # RTs
     metrics[f'{paired_cond}_go_rt'] = df.loc[go_mask & (df['rt'].notna()), 'rt'].mean()
     metrics[f'{paired_cond}_stop_fail_rt'] = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt'].mean()
+    print(f'{paired_cond}_stop_fail_rt: {metrics[f"{paired_cond}_stop_fail_rt"]}')
 
     # Accuracies
     metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
@@ -1180,7 +1181,6 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
                 stop_fail_with_resp['expected_response'] = stop_fail_with_resp['stim_key'].map(stim_to_resp)
                 stop_fail_with_resp['is_correct'] = stop_fail_with_resp['key_press'] == stop_fail_with_resp['expected_response']
                 metrics[f'{paired_cond}_stop_fail_acc'] = stop_fail_with_resp['is_correct'].mean()
-                print(f'{paired_cond}_stop_fail_acc: {metrics[f"{paired_cond}_stop_fail_acc"]}')
             else:
                 metrics[f'{paired_cond}_stop_fail_acc'] = np.nan
         else:
