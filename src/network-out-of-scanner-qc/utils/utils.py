@@ -1191,7 +1191,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_stop_success'] = len(df[stop_succ_mask])/len(df[stop_mask]) if len(df[stop_mask]) > 0 else np.nan
     
     # Calculate SSRT for this condition
-    metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask)
+    metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask, stim_cols=stim_cols)
     
     return metrics
 
@@ -1294,7 +1294,7 @@ def get_go_trials_rt(df, max_go_rt=2000):
     go_replacement_df['rt'] = go_replacement_df['rt'].replace([np.nan, -1], max_go_rt)
     return go_replacement_df['rt'].sort_values(ascending=True, ignore_index=True)
 
-def get_stop_trials_info(df, condition_mask=None):
+def get_stop_trials_info(df, condition_mask=None, stim_cols=None):
     """
     Get stop trial information including failure rate and average SSD.
     
@@ -1341,7 +1341,7 @@ def get_nth_rt(sorted_go_rt, p_respond):
     else:
         return sorted_go_rt.iloc[nth_index]
 
-def compute_SSRT(df, condition_mask=None, max_go_rt=2000):
+def compute_SSRT(df, condition_mask=None, max_go_rt=2000, stim_cols=None):
     """
     Compute Stop Signal Reaction Time (SSRT).
     
@@ -1356,17 +1356,14 @@ def compute_SSRT(df, condition_mask=None, max_go_rt=2000):
     sorted_go_rt = get_go_trials_rt(df, max_go_rt)
     
     # Get stop trial information
-    p_respond, avg_SSD = get_stop_trials_info(df, condition_mask)
+    p_respond, avg_SSD = get_stop_trials_info(df, condition_mask, stim_cols)
     
     # Get nth RT
     nth_rt = get_nth_rt(sorted_go_rt, p_respond)
-
-    if condition_mask is not None:
-        print(f'DEBUG {condition_mask} - SSRT:')
+    if stim_cols is not None:
         print(f'  nth_rt: {nth_rt}')
         print(f'  avg_SSD: {avg_SSD}')
         print(f'  SSRT: {nth_rt - avg_SSD}')
-    
     # Calculate SSRT
     if avg_SSD is not None and not np.isnan(avg_SSD) and not np.isnan(nth_rt):
         return nth_rt - avg_SSD
