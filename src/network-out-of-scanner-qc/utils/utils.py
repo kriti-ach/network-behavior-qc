@@ -1138,7 +1138,27 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
     # debug go_acc
     if stim_cols != []:
-        print(f'go_acc: {metrics[f"{paired_cond}_go_acc"]}')
+        print(f'DEBUG {paired_cond} - GO ACCURACY:')
+        print(f'  go_acc: {metrics[f"{paired_cond}_go_acc"]}')
+        print(f'  Total go trials: {go_mask.sum()}')
+        
+        # Check the correct_trial values for go trials
+        go_trials_for_acc = df[go_mask]
+        if len(go_trials_for_acc) > 0:
+            print(f'  correct_trial values for go trials: {go_trials_for_acc["correct_trial"].value_counts().to_dict()}')
+            print(f'  correct_trial mean: {go_trials_for_acc["correct_trial"].mean()}')
+            
+            # Check if there are any go trials with correct_trial = 0
+            incorrect_go_trials = go_trials_for_acc[go_trials_for_acc['correct_trial'] == 0]
+            if len(incorrect_go_trials) > 0:
+                print(f'  WARNING: Found {len(incorrect_go_trials)} go trials with correct_trial = 0')
+                print(f'    These trials: {incorrect_go_trials[["SS_trial_type", "correct_trial", "rt", "key_press"]].to_dict("records")}')
+            
+            # Check if there are any go trials with missing correct_trial
+            missing_correct_trials = go_trials_for_acc[go_trials_for_acc['correct_trial'].isna()]
+            if len(missing_correct_trials) > 0:
+                print(f'  WARNING: Found {len(missing_correct_trials)} go trials with missing correct_trial')
+                print(f'    These trials: {missing_correct_trials[["SS_trial_type", "correct_trial", "rt", "key_press"]].to_dict("records")}')
 
     go_trials = df[go_mask]
     # Go omission rate
