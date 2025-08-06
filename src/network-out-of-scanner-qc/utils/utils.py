@@ -1191,7 +1191,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_stop_success'] = len(df[stop_succ_mask])/len(df[stop_mask]) if len(df[stop_mask]) > 0 else np.nan
     
     # Calculate SSRT for this condition
-    metrics[f'{paired_cond}_ssrt'] = compute_SSRT_for_condition(df, paired_mask)
+    metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask)
     
     return metrics
 
@@ -1294,7 +1294,7 @@ def get_go_trials_rt(df, max_go_rt=2000):
     go_replacement_df['rt'] = go_replacement_df['rt'].replace([np.nan, -1], max_go_rt)
     return go_replacement_df['rt'].sort_values(ascending=True, ignore_index=True)
 
-def get_stop_trials_info(df):
+def get_stop_trials_info(df, condition_mask=None):
     """
     Get stop trial information including failure rate and average SSD.
     
@@ -1304,7 +1304,10 @@ def get_stop_trials_info(df):
     Returns:
         tuple: (p_respond, avg_SSD) where p_respond is probability of responding on stop trials
     """
-    stop_df = df[df['SS_trial_type'] == 'stop']
+    if condition_mask is not None:
+        stop_df = df[(df['SS_trial_type'] == 'stop') & condition_mask]
+    else:
+        stop_df = df[df['SS_trial_type'] == 'stop']
     
     if len(stop_df) == 0:
         return 0.0, np.nan
@@ -1338,7 +1341,7 @@ def get_nth_rt(sorted_go_rt, p_respond):
     else:
         return sorted_go_rt.iloc[nth_index]
 
-def compute_SSRT(df, max_go_rt=2000):
+def compute_SSRT(df, condition_mask=None, max_go_rt=2000):
     """
     Compute Stop Signal Reaction Time (SSRT).
     
@@ -1353,78 +1356,7 @@ def compute_SSRT(df, max_go_rt=2000):
     sorted_go_rt = get_go_trials_rt(df, max_go_rt)
     
     # Get stop trial information
-    p_respond, avg_SSD = get_stop_trials_info(df)
-    
-    # Get nth RT
-    nth_rt = get_nth_rt(sorted_go_rt, p_respond)
-    
-    # Calculate SSRT
-    if avg_SSD is not None and not np.isnan(avg_SSD) and not np.isnan(nth_rt):
-        return nth_rt - avg_SSD
-    else:
-        return np.nan
-
-def get_go_trials_rt_for_condition(df, condition_mask, max_go_rt=2000):
-    """
-    Get sorted go trial reaction times for a specific condition with replacement for missing values.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing task data
-        condition_mask (pd.Series): Boolean mask for the condition
-        max_go_rt (float): Maximum RT to use for missing values
-        
-    Returns:
-        pd.Series: Sorted go trial RTs for the condition
-    """
-    go_trials = df[(df['SS_trial_type'] == 'go') & condition_mask]
-    
-    if len(go_trials) == 0:
-        return pd.Series(dtype=float)
-    
-    go_replacement_df = go_trials.copy()
-    # Replace both NaN and -1 values with max_go_rt
-    go_replacement_df['rt'] = go_replacement_df['rt'].replace([np.nan, -1], max_go_rt)
-    return go_replacement_df['rt'].sort_values(ascending=True, ignore_index=True)
-
-def get_stop_trials_info_for_condition(df, condition_mask):
-    """
-    Get stop trial information for a specific condition including failure rate and average SSD.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing task data
-        condition_mask (pd.Series): Boolean mask for the condition
-        
-    Returns:
-        tuple: (p_respond, avg_SSD) where p_respond is probability of responding on stop trials
-    """
-    stop_df = df[(df['SS_trial_type'] == 'stop') & condition_mask]
-    
-    if len(stop_df) == 0:
-        return 0.0, np.nan
-    
-    stop_failure = stop_df[stop_df['rt'] > 0]
-    p_respond = len(stop_failure) / len(stop_df)
-    avg_SSD = stop_df['SS_delay'].mean()
-    
-    return p_respond, avg_SSD
-
-def compute_SSRT_for_condition(df, condition_mask, max_go_rt=2000):
-    """
-    Compute Stop Signal Reaction Time (SSRT) for a specific condition.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing task data
-        condition_mask (pd.Series): Boolean mask for the condition
-        max_go_rt (float): Maximum RT to use for missing values
-        
-    Returns:
-        float: SSRT value for the condition
-    """
-    # Get go trial RTs for this condition
-    sorted_go_rt = get_go_trials_rt_for_condition(df, condition_mask, max_go_rt)
-    
-    # Get stop trial information for this condition
-    p_respond, avg_SSD = get_stop_trials_info_for_condition(df, condition_mask)
+    p_respond, avg_SSD = get_stop_trials_info(df, condition_mask)
     
     # Get nth RT
     nth_rt = get_nth_rt(sorted_go_rt, p_respond)
