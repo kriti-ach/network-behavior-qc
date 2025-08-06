@@ -1130,7 +1130,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     stop_fail_mask = stop_mask & (df['correct_trial'] == 0)
     stop_succ_mask = stop_mask & (df['correct_trial'] == 1)
 
-    if stim_cols != []
+    if stim_cols != []:
         # Debug information
         print(f'DEBUG {paired_cond}:')
         print(f'  Total trials with paired_mask: {paired_mask.sum()}')
