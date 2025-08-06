@@ -1148,7 +1148,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
             print(f'  Stop trial rt values (first 10): {stop_trials['rt'].head(10).values}')
         
         if (stop_fail_mask & (df['rt'].notna())).sum() > 0:
-            stop_fail_rts = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt']
+            stop_fail_rts = df.loc[stop_fail_mask & (df['rt'].notna()), 'rt'] & df['rt'] > 0
             print(f'  Stop fail RTs: {stop_fail_rts.values}')
             print(f'  Stop fail RT range: {stop_fail_rts.min()} - {stop_fail_rts.max()}')
 
