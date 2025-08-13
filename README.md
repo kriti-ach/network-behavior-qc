@@ -1,51 +1,36 @@
-# network-out-of-scanner-qc
+# Network out-of-scanner QC
 
-> Behavioral QC for network out-of-scanner data
+## Description
+This repo quality controls the network out-of-scanner behavioral data. It generates task-specific QC reports with metrics like accuracy, RT, omission rate, commission rate, etc. It uses data from `/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner` and outputs QC csvs at `/oak/stanford/groups/russpold/data/network_grant/behavioral_data/qc_by_task/out_of_scanner/`.
 
-## Complete the setup
+## Installation
+Clone the repository using:
 
-1. Initialize a git repository with `git init`
-2. Run `uv sync` to install the dependencies
-3. Install pre-commit (if you haven’t already)
-- `pip install pre-commit`
-4. Run `pre-commit install` to install the pre-commit hooks
-- pre-commit installed at `.git/hooks/pre-commit`
-5. (Optional) Set up VS Code so that it lints/formats on save
-- Create `.vscode/settings.json` to configure your workspace settings: `mkdir .vscode && touch .vscode/settings.json`
-- Paste the following settings into `.vscode/settings.json`:
-```json
-{
-    "notebook.formatOnSave.enabled": true,
-    "notebook.formatOnCellExecution": true,
-    "notebook.defaultFormatter": "charliermarsh.ruff",
-    "notebook.codeActionsOnSave": {
-        "notebook.source.fixAll": "explicit",
-        "notebook.source.organizeImports": "explicit",
-    },
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "editor.codeActionsOnSave": {
-            "source.fixAll": "explicit",
-            "source.organizeImports": "explicit",
-        }
-    },
-}
+```bash
+git clone https://github.com/kriti-ach/network-out-of-scanner-qc.git
+```
+Go into the repo using:
+
+```bash
+cd /path/to/network-out-of-scanner-qc
 ```
 
-
-## Project-specific environment variables
-
-If you need to define environment variables for the project (e.g. API keys or simple configuration settings), 
-first create the .env file (which will not be added to the git repo, in order to prevent leakage of private information):
-
+Set up the environment using:
+```bash
+source setup_env.sh
 ```
-cp .env.example .env
-```
+## Repository Structure
 
-Then define the variables there, which can be accessed via `os.environ` in Python after using the following commands:
+- /src:    
+    - /network-out-of-scanner-qc:
+        * [main.py]: Script to run the QC scripts. 
+        - /utils: 
+            * [utils.py]: Helper functions to condense `main.py` script.
+            * [globals.py]: Contains the global variables, including the task names and dual task conditions.
+- /tests:
+    - Contains tests for major functions.
+    - Run tests using `uv run pytest`
 
-```
-from dotenv import load_dotenv
-load_dotenv()
-```
+## Notes
+
+This repository used the Cookiecutter template from: https://github.com/lobennett/uv_cookie
