@@ -77,6 +77,7 @@ class TestStopSignalMetrics:
             'rt': [0.5, 0.6, 0.7, 0.8, 0.9],
             'key_press': [1, 1, 2, 1, 2],
             'flanker_condition': ['congruent', 'congruent', 'congruent', 'incongruent', 'incongruent'],
+            'SS_delay': [np.nan, np.nan, 0.2, np.nan, 0.3],
             'stim': ['A', 'B', 'A', 'B', 'A'],
             'correct_response': [1, 2, 1, 2, 1]
         })
@@ -93,6 +94,7 @@ class TestStopSignalMetrics:
         assert 'congruent_go_acc' in metrics
         assert 'congruent_stop_fail_acc' in metrics
         assert 'congruent_stop_success' in metrics
+        assert 'congruent_ssrt' in metrics  # Now includes SSRT
         
         # Check values
         assert metrics['congruent_go_rt'] == pytest.approx(np.mean([0.5, 0.6]))
@@ -123,12 +125,14 @@ class TestStopSignalMetrics:
         
     def test_get_go_trials_rt(self):
         """Test go trial RT extraction."""
-        # Test with test phase
-        df_with_phase = self.df.copy()
-        df_with_phase['Phase'] = ['test', 'test', 'test', 'test', 'test', 'test', 'test', 'test']
-        
-        sorted_rt = get_go_trials_rt(df_with_phase)
+        # Test without condition mask (original behavior)
+        sorted_rt = get_go_trials_rt(self.df)
         expected_rt = pd.Series([0.5, 0.6, 0.8, 1.0, 1.2]).sort_values(ignore_index=True)
+        pd.testing.assert_series_equal(sorted_rt, expected_rt)
+        
+        # Test with condition mask
+        condition_mask = self.df['SS_trial_type'] == 'go'
+        sorted_rt = get_go_trials_rt(self.df, condition_mask=condition_mask)
         pd.testing.assert_series_equal(sorted_rt, expected_rt)
         
         # Test with missing RT values (should be filled with max_go_rt)
@@ -140,12 +144,19 @@ class TestStopSignalMetrics:
         
     def test_get_stop_trials_info(self):
         """Test stop trial information extraction."""
+        # Test without condition mask (original behavior)
         p_respond, avg_ssd = get_stop_trials_info(self.df)
         
         # Check probability of responding (2 failures out of 3 stop trials)
         assert p_respond == pytest.approx(2/3)
         
         # Check average SSD
+        assert avg_ssd == pytest.approx(0.3)
+        
+        # Test with condition mask
+        condition_mask = self.df['SS_trial_type'] == 'stop'
+        p_respond, avg_ssd = get_stop_trials_info(self.df, condition_mask=condition_mask)
+        assert p_respond == pytest.approx(2/3)
         assert avg_ssd == pytest.approx(0.3)
         
         # Test with no stop trials
@@ -175,6 +186,7 @@ class TestStopSignalMetrics:
         
     def test_compute_SSRT(self):
         """Test SSRT calculation."""
+        # Test without condition mask (original behavior)
         ssrt = compute_SSRT(self.df)
         
         # SSRT = nth_rt - avg_ssd
@@ -184,10 +196,43 @@ class TestStopSignalMetrics:
         expected_ssrt = 0.6 - 0.3
         assert ssrt == pytest.approx(expected_ssrt)
         
+        # Test with condition mask
+        condition_mask = self.df['SS_trial_type'] == 'go'
+        ssrt = compute_SSRT(self.df, condition_mask=condition_mask)
+        # Should be the same since we're only looking at go trials for the mask
+        assert ssrt == pytest.approx(expected_ssrt)
+        
         # Test with no go trials
         df_no_go = self.df[self.df['SS_trial_type'] == 'stop']
         ssrt = compute_SSRT(df_no_go)
         assert np.isnan(ssrt)
+        
+    def test_compute_SSRT_with_condition_mask(self):
+        """Test SSRT calculation with condition masking for dual tasks."""
+        # Create dual task data with different conditions
+        df_dual = pd.DataFrame({
+            'SS_trial_type': ['go', 'go', 'stop', 'go', 'stop', 'go', 'stop'],
+            'rt': [0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1],
+            'key_press': [1, 1, 2, 1, 2, 1, -1],
+            'SS_delay': [np.nan, np.nan, 0.2, np.nan, 0.3, np.nan, 0.4],
+            'flanker_condition': ['congruent', 'congruent', 'congruent', 'incongruent', 'incongruent', 'incongruent', 'incongruent']
+        })
+        
+        # Test SSRT for congruent condition only
+        congruent_mask = df_dual['flanker_condition'] == 'congruent'
+        ssrt_congruent = compute_SSRT(df_dual, condition_mask=congruent_mask)
+        
+        # Test SSRT for incongruent condition only
+        incongruent_mask = df_dual['flanker_condition'] == 'incongruent'
+        ssrt_incongruent = compute_SSRT(df_dual, condition_mask=incongruent_mask)
+        
+        # Both should be valid SSRT values
+        assert not np.isnan(ssrt_congruent)
+        assert not np.isnan(ssrt_incongruent)
+        
+        # They might be different due to different trial counts
+        assert isinstance(ssrt_congruent, (int, float))
+        assert isinstance(ssrt_incongruent, (int, float))
         
     def test_compute_stop_signal_metrics_single(self):
         """Test complete stop signal metrics for single task."""
@@ -227,10 +272,11 @@ class TestStopSignalMetrics:
             assert f'{condition}_go_acc' in metrics
             assert f'{condition}_stop_fail_acc' in metrics
             assert f'{condition}_stop_success' in metrics
+            assert f'{condition}_ssrt' in metrics  # Now includes SSRT for each condition
         
-        # Check that global metrics are present
+        # Check that global metrics are present (but no global SSRT for dual tasks)
         assert 'avg_ssd' in metrics
-        assert 'ssrt' in metrics
+        # Note: Global SSRT is no longer calculated for dual tasks
         
     def test_edge_cases(self):
         """Test edge cases and error handling."""
@@ -264,6 +310,11 @@ class TestStopSignalMetrics:
         df_no_go = self.df[self.df['SS_trial_type'] == 'stop']
         metrics = compute_stop_signal_metrics(df_no_go, dual_task=False)
         assert np.isnan(metrics['ssrt'])
+        
+        # Test condition mask with empty result
+        empty_mask = pd.Series([False] * len(self.df))
+        ssrt = compute_SSRT(self.df, condition_mask=empty_mask)
+        assert np.isnan(ssrt)
 
 if __name__ == "__main__":
     pytest.main([__file__]) 
