@@ -1288,6 +1288,7 @@ def get_go_trials_rt(df, max_go_rt=2000, condition_mask=None):
         pd.Series: Sorted go trial RTs
     """
     if condition_mask is not None:
+        print(f'DEBUG condition_mask: {condition_mask}')
         go_trials = df[(df['SS_trial_type'] == 'go') & condition_mask]
     else:
         go_trials = df[df['SS_trial_type'] == 'go']
