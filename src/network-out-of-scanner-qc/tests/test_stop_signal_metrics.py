@@ -127,6 +127,7 @@ class TestStopSignalMetrics:
         """Test go trial RT extraction."""
         # Test without condition mask (original behavior)
         sorted_rt = get_go_trials_rt(self.df)
+        assert len(sorted_rt) == 5
         assert sorted_rt[0] == 0.5
         assert sorted_rt[1] == 0.6
         assert sorted_rt[2] == 0.8
