@@ -460,8 +460,11 @@ def calculate_omission_rate(df, mask_omission, total_num_trials):
     Returns:
         float: Omission rate
     """
-    num_omissions = len(df[mask_omission])
-    return num_omissions / total_num_trials if total_num_trials > 0 else np.nan
+    if df[mask_omission].empty:
+        return 0
+    else:
+        num_omissions = len(df[mask_omission])
+        return num_omissions / total_num_trials if total_num_trials > 0 else np.nan
 
 def calculate_commission_rate(df, mask_commission, total_num_trials):
     """
