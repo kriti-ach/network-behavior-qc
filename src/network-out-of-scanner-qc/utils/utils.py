@@ -1037,7 +1037,6 @@ def append_summary_rows_to_csv(csv_path):
 def correct_columns(csv_path):
     df = pd.read_csv(csv_path)
     df = df.rename(columns=lambda x: x.replace('tswitch_new_cswitch', 'tswitch_cswitch'), inplace=True)
-    df.to_csv(csv_path, index=False)
 
 def calculate_single_stop_signal_metrics(df):
     """
