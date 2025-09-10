@@ -1036,11 +1036,15 @@ def append_summary_rows_to_csv(csv_path):
 
 def correct_columns(csv_path):
     df = pd.read_csv(csv_path)
-    rename_dict = {col: col.replace('tswitch_new_cswitch', 'tswitch_cswitch') 
-                   for col in df.columns if 'tswitch_new_cswitch' in col}
+    for col in df.columns:
+        if 'tswitch_new_cswitch' in col:
+            print(col)
+
+    # rename_dict = {col: col.replace('tswitch_new_cswitch', 'tswitch_cswitch') 
+    #                for col in df.columns if 'tswitch_new_cswitch' in col}
     
     # Rename the columns
-    df = df.rename(columns=rename_dict, inplace=True)
+    # df = df.rename(columns=rename_dict, inplace=True)
 
 def calculate_single_stop_signal_metrics(df):
     """
