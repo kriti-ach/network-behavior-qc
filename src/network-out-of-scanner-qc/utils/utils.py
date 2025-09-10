@@ -1038,13 +1038,10 @@ def correct_columns(csv_path):
     df = pd.read_csv(csv_path)
     for col in df.columns:
         if 'tswitch_new_cswitch' in col:
-            print(col)
-
-    # rename_dict = {col: col.replace('tswitch_new_cswitch', 'tswitch_cswitch') 
-    #                for col in df.columns if 'tswitch_new_cswitch' in col}
-    
-    # Rename the columns
-    # df = df.rename(columns=rename_dict, inplace=True)
+            print("Original column name:", col)
+            new_col = col.replace('tswitch_new_cswitch', 'tswitch_cswitch')
+            print("New column name:", new_col)
+            df = df.rename(columns={col: new_col}, inplace=True)
 
 def calculate_single_stop_signal_metrics(df):
     """
