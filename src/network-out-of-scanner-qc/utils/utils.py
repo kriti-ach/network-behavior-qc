@@ -1034,10 +1034,10 @@ def append_summary_rows_to_csv(csv_path):
         df.loc[len(df)] = values
     df.to_csv(csv_path, index=False)
 
-def correct_columns(task_name):
-    df = pd.read_csv(f"{task_name}_qc.csv")
+def correct_columns(csv_path):
+    df = pd.read_csv(csv_path)
     df = df.rename(columns=lambda x: x.replace('tswitch_new_cswitch', 'tswitch_cswitch'), inplace=True)
-    df.to_csv(f"{task_name}_qc.csv", index=False)
+    df.to_csv(csv_path, index=False)
 
 def calculate_single_stop_signal_metrics(df):
     """

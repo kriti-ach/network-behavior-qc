@@ -53,4 +53,4 @@ for subject_folder in glob.glob(str(folder_path / "s*")):
 for task in SINGLE_TASKS_OUT_OF_SCANNER + DUAL_TASKS_OUT_OF_SCANNER:
     append_summary_rows_to_csv(output_path / f"{task}_qc.csv")
     if task == 'flanker_with_cued_task_switching' or task == 'shape_matching_with_cued_task_switching':
-        correct_columns(task)
+        correct_columns(output_path / f"{task}_qc.csv")
