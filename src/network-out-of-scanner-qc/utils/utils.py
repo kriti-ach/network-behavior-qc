@@ -409,8 +409,6 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
                     new_row[col] = new_row[col].astype(str)
         
         df = pd.concat([df, new_row], ignore_index=True)
-        # if task_name == 'flanker_with_cued_task_switching' or task_name == 'shape_matching_with_cued_task_switching':
-        #     print(df.columns)
         df['subject_id_numeric'] = df['subject_id'].str.replace('s', '').astype(int)
         # Sort the DataFrame
         df = df.sort_values(by='subject_id_numeric', ascending=True)
@@ -1035,6 +1033,11 @@ def append_summary_rows_to_csv(csv_path):
     for stat, values in summary.items():
         df.loc[len(df)] = values
     df.to_csv(csv_path, index=False)
+
+def correct_columns(task_name):
+    df = pd.read_csv(f"{task_name}_qc.csv")
+    df = df.rename(columns=lambda x: x.replace('tswitch_new_cswitch', 'tswitch_cswitch'), inplace=True)
+    df.to_csv(f"{task_name}_qc.csv", index=False)
 
 def calculate_single_stop_signal_metrics(df):
     """
