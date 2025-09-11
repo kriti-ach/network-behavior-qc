@@ -519,7 +519,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
     
     if is_nogo:
         # For nogo: only calculate RT for commission errors (incorrect responses)
-        mask_rt = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
+        mask_rt = mask_acc & (df['key_press'] != -1)
         metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
         metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
         # Don't calculate omission_rate or commission_rate for nogo
