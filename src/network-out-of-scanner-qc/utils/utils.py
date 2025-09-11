@@ -994,6 +994,11 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
                            df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
                 # Check if this is a go_nogo task
                 if 'go_nogo' in task1 or 'go_nogo' in task2:
+                    print(f'{cond1}_{cond2}')
+                    print(f'condition_columns[task1]: {condition_columns[task1]}')
+                    print(f'cond1: {cond1}')
+                    print(f'condition_columns[task2]: {condition_columns[task2]}')
+                    print(f'cond2: {cond2}')
                     calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
                 else:
                     calculate_basic_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
