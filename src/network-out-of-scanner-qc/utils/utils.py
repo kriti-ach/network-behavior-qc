@@ -991,16 +991,21 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
         for cond1 in conditions[task1]:
             for cond2 in conditions[task2]:
                 if 'go_nogo' in task1:
-                    mask_acc = df[condition_columns[task1]] == cond1 & \
-                        df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
-                    calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+                    mask1 = df[condition_columns[task1]].astype(str).str.lower() == cond1.lower()
+                    mask2 = df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
+                    mask_acc = mask1 & mask2
                 elif 'go_nogo' in task2:
-                    mask_acc = df[condition_columns[task1]].str.contains(cond1, case=False, na=False) & \
-                        df[condition_columns[task2]] == cond2
-                    calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+                    mask1 = df[condition_columns[task1]].str.contains(cond1, case=False, na=False)
+                    mask2 = df[condition_columns[task2]].astype(str).str.lower() == cond2.lower()
+                    mask_acc = mask1 & mask2
                 else:
                     mask_acc = df[condition_columns[task1]].str.contains(cond1, case=False, na=False) & \
-                           df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
+                        df[condition_columns[task2]].str.contains(cond2, case=False, na=False)
+
+                # Check if this is a go_nogo task
+                if 'go_nogo' in task1 or 'go_nogo' in task2:
+                    calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+                else:
                     calculate_basic_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
     else:
         # For single tasks, just iterate through conditions
