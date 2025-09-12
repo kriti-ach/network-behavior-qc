@@ -608,7 +608,7 @@ def compute_cued_task_switching_metrics(
             continue
     return metrics
 
-def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False):
+def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False):
     """
     Compute metrics for n-back tasks (single, dual, or n-back with cuedts).
     - df: DataFrame
@@ -617,6 +617,7 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
     - paired_conditions: list of paired task conditions (if dual)
     - cuedts: if True, handle n-back with cued task switching
     - gonogo: if True, handle n-back with go_nogo task switching
+    - shapematching: if True, handle n-back with shape matching task switching
     Returns: dict of metrics
     """
     metrics = {}
@@ -672,7 +673,10 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                 if pd.isna(delay):
                     continue
                 for paired_cond in paired_conditions:
-                    condition = f"{n_back_condition}_{delay}back_{paired_cond.lower()}"
+                    if shapematching:
+                        condition = f"n_back_{n_back_condition}_{delay}back_shape_matching_{paired_cond.lower()}"
+                    else:
+                        condition = f"{n_back_condition}_{delay}back_{paired_cond.lower()}"
                     mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col].str.lower() == paired_cond.lower())
                     calculate_basic_metrics(df, mask_acc, condition, metrics)
     return metrics
@@ -883,7 +887,7 @@ def get_task_metrics(df, task_name):
             return compute_n_back_metrics(df, None, paired_task_col='flanker_condition', paired_conditions=paired_conditions)
         elif ('n_back' in task_name and 'shape_matching' in task_name) or ('NBack' in task_name and 'shape_matching' in task_name):
             paired_conditions = [c for c in df['shape_matching_condition'].unique() if pd.notna(c)]
-            return compute_n_back_metrics(df, None, paired_task_col='shape_matching_condition', paired_conditions=paired_conditions)
+            return compute_n_back_metrics(df, None, paired_task_col='shape_matching_condition', paired_conditions=paired_conditions, shapematching=True)
         elif ('n_back' in task_name and 'directed_forgetting' in task_name) or ('NBack' in task_name and 'directed_forgetting' in task_name):
             paired_conditions = [c for c in df['directed_forgetting_condition'].unique() if pd.notna(c)]
             return compute_n_back_metrics(df, None, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions)
