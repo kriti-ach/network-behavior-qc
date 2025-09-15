@@ -50,7 +50,6 @@ for subject_folder in glob.glob(str(folder_path / "s*")):
                     metrics = get_task_metrics(df, task_name)
                     if 'stop_signal' in task_name:
                         violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
-                        print(f'Violations for {task_name}: {violations_df}')
                     update_qc_csv(output_path, task_name, subject_id, metrics)
                 except Exception as e:
                     print(f"Error processing {task_name} for subject {subject_id}: {str(e)}")
