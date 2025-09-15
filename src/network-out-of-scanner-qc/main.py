@@ -11,9 +11,8 @@ from utils.utils import (
     get_task_metrics,
     append_summary_rows_to_csv,
     correct_columns,
-    compute_violations
 )
-
+from utils.violations_utils import compute_violations
 from utils.globals import SINGLE_TASKS_FMRI, DUAL_TASKS_FMRI, SINGLE_TASKS_OUT_OF_SCANNER, DUAL_TASKS_OUT_OF_SCANNER
 
 # folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/validation_BIDS/")
