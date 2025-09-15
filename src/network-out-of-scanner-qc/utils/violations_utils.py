@@ -18,7 +18,7 @@ def compute_violations(subject_id, df, task_name):
             
             if pd.notna(go_rt) and pd.notna(stop_rt):  # Ensure RTs are valid
                 difference = stop_rt - go_rt  # Calculate the difference
-                ssd = df.iloc[i + 1]['ssd']    # SSD for the Stop trial
+                ssd = df.iloc[i + 1]['SS_delay']    # SSD for the Stop trial
                 violations_data.append({'subject_id': subject_id, 'task_name': task_name, 'ssd': ssd, 'difference': difference})
 
     return pd.DataFrame(violations_data)
