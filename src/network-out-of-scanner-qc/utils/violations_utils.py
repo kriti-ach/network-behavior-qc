@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import re
 import numpy as np
-from utils.utils import filter_to_test_trials
+from utils.utils import filter_to_test_trials, sort_subject_ids
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -33,6 +33,7 @@ def aggregate_violations(violations_df):
     aggregated_violations_df = violations_df.groupby(['subject_id', 'task_name', 'ssd']).agg(
         difference_mean=('difference', 'mean'),
     ).reset_index()
+    aggregated_violations_df = sort_subject_ids(aggregated_violations_df)
     return aggregated_violations_df
 
 def plot_violations(aggregated_violations_df, violations_output_path):

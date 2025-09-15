@@ -381,6 +381,11 @@ def filter_to_test_trials(df, task_name):
     """
     return df[df['trial_id'] == 'test_trial']
 
+def sort_subject_ids(df):
+    df['subject_id_numeric'] = df['subject_id'].str.replace('s', '').astype(int)
+    df = df.sort_values(by='subject_id_numeric', ascending=True)
+    return df
+
 def update_qc_csv(output_path, task_name, subject_id, metrics):
     qc_file = output_path / f"{task_name}_qc.csv"
     try:
@@ -409,9 +414,7 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
                     new_row[col] = new_row[col].astype(str)
         
         df = pd.concat([df, new_row], ignore_index=True)
-        df['subject_id_numeric'] = df['subject_id'].str.replace('s', '').astype(int)
-        # Sort the DataFrame
-        df = df.sort_values(by='subject_id_numeric', ascending=True)
+        df = sort_subject_ids(df)
 
         # Remove 'subject_id_numeric' and add the 's' back to 'subject_id'
         df['subject_id'] = 's' + df['subject_id_numeric'].astype(str)
