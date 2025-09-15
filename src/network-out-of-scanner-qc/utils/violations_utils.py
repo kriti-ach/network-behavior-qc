@@ -68,7 +68,7 @@ def plot_violations(aggregated_violations_df, violations_output_path):
                 if j == 0:
                     ax.set_ylabel('Avg Stop RT - Go RT')
                 if i == len(subjects) - 1:
-                    ax.set_xlabel('SSD (s)')
+                    ax.set_xlabel('SSD (ms)')
                 
                 # Remove top and right spines
                 ax.spines['top'].set_visible(False)
@@ -85,5 +85,5 @@ def plot_violations(aggregated_violations_df, violations_output_path):
 
     # Adjust layout and save
     plt.tight_layout()
-    plt.savefig(violations_output_path / 'violations_matrix.png', dpi=300, bbox_inches='tight')
+    plt.savefig(violations_output_path / 'violations_matrix.pdf', dpi=300, bbox_inches='tight')
     plt.close()
