@@ -27,3 +27,8 @@ def compute_violations(subject_id, df, task_name):
 
     return pd.DataFrame(violations_row)
 
+def aggregate_violations(violations_df):
+    aggregated_violations_df = violations_df.groupby(['subject_id', 'task_name', 'ssd']).agg(
+        difference_mean=('difference', 'mean'),
+    ).reset_index()
+    return aggregated_violations_df
