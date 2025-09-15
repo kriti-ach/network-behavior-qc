@@ -74,16 +74,21 @@ def plot_violations(aggregated_violations_df, violations_output_path):
                 ax.spines['top'].set_visible(False)
                 ax.spines['right'].set_visible(False)
             
-            # Set title only for the top row
+            # Set title only for the top row with larger font
             if i == 0:
-                ax.set_title(task)
+                ax.set_title(task, fontsize=14)
             
-            # Set subject ID only for the rightmost column
-            if j == len(tasks) - 1:
-                ax.text(1.02, 0.5, subject, transform=ax.transAxes, 
-                        rotation=-90, va='center')
+            # Set subject ID only for the leftmost column with larger font
+            if j == 0:
+                ax.text(-0.5, 0.5, subject, transform=ax.transAxes, 
+                        ha='right', va='center', fontsize=14)
 
-    # Adjust layout and save
+    # Adjust layout
     plt.tight_layout()
+    
+    # Add extra space on the left for subject IDs
+    plt.subplots_adjust(left=0.15)
+
+    # Save the figure
     plt.savefig(violations_output_path / 'violations_matrix.pdf', dpi=300, bbox_inches='tight')
     plt.close()
