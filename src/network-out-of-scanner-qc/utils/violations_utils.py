@@ -5,7 +5,7 @@ import re
 import numpy as np
 
 def compute_violations(subject_id, df, task_name):
-    violations_data = []
+    violations_row = []
 
     for i in range(len(df) - 1):  # Go until the second to last trial
         # Check for a Go trial followed by a Stop trial with a violation
@@ -19,7 +19,7 @@ def compute_violations(subject_id, df, task_name):
             if pd.notna(go_rt) and pd.notna(stop_rt):  # Ensure RTs are valid
                 difference = stop_rt - go_rt  # Calculate the difference
                 ssd = df.iloc[i + 1]['SS_delay']    # SSD for the Stop trial
-                violations_data.append({'subject_id': subject_id, 'task_name': task_name, 'ssd': ssd, 'difference': difference})
+                violations_row.append({'subject_id': subject_id, 'task_name': task_name, 'ssd': ssd, 'difference': difference})
 
-    return pd.DataFrame(violations_data)
+    return pd.DataFrame(violations_row)
 
