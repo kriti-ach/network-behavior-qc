@@ -962,7 +962,7 @@ def get_task_metrics(df, task_name):
         elif 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             conditions = {'spatial_task_switching': SPATIAL_TASK_SWITCHING_CONDITIONS}
             condition_columns = {'spatial_task_switching': 'task_switch'}
-        elif 'go_nogo' in task_name:    
+        elif 'go_nogo' in task_name:
             conditions = {'go_nogo': GO_NOGO_CONDITIONS}
             condition_columns = {'go_nogo': 'go_nogo_condition'}
         elif 'shape_matching' in task_name:
