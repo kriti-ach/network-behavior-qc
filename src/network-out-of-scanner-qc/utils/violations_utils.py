@@ -11,7 +11,7 @@ def compute_violations(subject_id, df, task_name):
         # Check for a Go trial followed by a Stop trial with a violation
         if (df.iloc[i]['stop_signal_condition'] == 'go' and
             df.iloc[i + 1]['stop_signal_condition'] == 'stop' and
-            pd.notna(df.iloc[i + 1]['rt'])):
+            (df.iloc[i + 1]['rt'] != -1)):
             
             go_rt = df.iloc[i]['rt']         # RT of Go trial
             stop_rt = df.iloc[i + 1]['rt']  # RT of Stop trial
