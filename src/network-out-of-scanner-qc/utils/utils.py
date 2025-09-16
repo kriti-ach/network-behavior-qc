@@ -383,8 +383,8 @@ def filter_to_test_trials(df, task_name):
 
 def sort_subject_ids(df):
     df['subject_id_numeric'] = df['subject_id'].str.replace('s', '').astype(int)
-    df = df.sort_values(by='subject_id_numeric', ascending=True)
-    df = df.drop(columns=['subject_id_numeric'])
+    df.sort_values(by='subject_id_numeric', ascending=True, inplace=True)
+    df.drop(columns=['subject_id_numeric'], inplace=True)
     return df
 
 def update_qc_csv(output_path, task_name, subject_id, metrics):
