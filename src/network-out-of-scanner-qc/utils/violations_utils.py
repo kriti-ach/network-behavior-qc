@@ -58,12 +58,18 @@ def plot_violations(aggregated_violations_df, violations_output_path):
                              figsize=(5*len(tasks), 3*len(subjects)), 
                              squeeze=False)
 
-    # Set a common y-limit for all plots
+    # Set common y-limit for all plots
     y_min = aggregated_violations_df['difference_mean'].min()
     y_max = aggregated_violations_df['difference_mean'].max()
     print(f'y_min: {y_min}, y_max: {y_max}')
     y_range = y_max - y_min
     y_limit = (y_min - 0.1*y_range, y_max + 0.1*y_range)
+
+    # Set common x-limit for all plots
+    x_min = aggregated_violations_df['ssd'].min()
+    x_max = aggregated_violations_df['ssd'].max()
+    x_range = x_max - x_min
+    x_limit = (x_min - 0.1*x_range, x_max + 0.1*x_range)
 
     for i, subject in enumerate(subjects):
         for j, task in enumerate(tasks):
@@ -77,6 +83,7 @@ def plot_violations(aggregated_violations_df, violations_output_path):
                 ax.scatter(data['ssd'], data['difference_mean'], color='blue')
                 ax.axhline(0, color='red', linestyle='--')
                 ax.set_ylim(y_limit)
+                ax.set_xlim(x_limit)  # Set the same x-limits for all plots
                 
                 # Only set x and y labels for the leftmost and bottom subplots
                 if j == 0:
