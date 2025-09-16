@@ -30,9 +30,6 @@ def compute_violations(subject_id, df, task_name):
         if current_trial['stop_signal_condition'] == 'go':
             next_trials = df.iloc[i+1:]
             next_valid_trial = next_trials[next_trials['stop_signal_condition'].notna()].iloc[0] if not next_trials.empty else None
-            if next_valid_trial is not None:
-                print(f'current_trial[stop_signal_condition]: {current_trial["stop_signal_condition"]}')
-                print(f'next_valid_trial[stop_signal_condition]: {next_valid_trial["stop_signal_condition"]}')
 
             if next_valid_trial is not None and next_valid_trial['stop_signal_condition'] == 'stop':
                 if check_violation_conditions(current_trial, next_valid_trial):
@@ -41,8 +38,6 @@ def compute_violations(subject_id, df, task_name):
                     ssd = get_ssd(next_valid_trial)
                     difference = find_difference(stop_rt, go_rt)
                     violations_row.append({'subject_id': subject_id, 'task_name': task_name, 'ssd': ssd, 'difference': difference})
-            
-            
 
     return pd.DataFrame(violations_row)
 
