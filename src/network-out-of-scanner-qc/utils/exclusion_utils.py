@@ -112,11 +112,13 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 # Extract prefix before 'go_acc' and 'nogo_acc'
                 go_prefix = col_name_go.replace('_go_acc', '')
                 nogo_prefix = col_name_nogo.replace('_nogo_acc', '')
+                print(f"go_prefix: {go_prefix}, nogo_prefix: {nogo_prefix}")
                 
                 # Only proceed if prefixes match
                 if go_prefix == nogo_prefix:
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
+                    print(f"go_acc_value: {go_acc_value}, nogo_acc_value: {nogo_acc_value}")
                     if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('_nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
