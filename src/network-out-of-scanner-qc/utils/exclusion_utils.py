@@ -55,12 +55,12 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         # Create a dictionary to hold metric values from the row
         metrics_info = {
-            'stop_fail_acc': [row.filter(like='stop_fail_acc').values, 
-                              STOP_ACC_LOW_THRESHOLD, 
+            'stop_fail_acc': [row.filter(like='stop_fail_acc').values,
+                              STOP_ACC_LOW_THRESHOLD,
                               STOP_ACC_HIGH_THRESHOLD],
-            'go_rt': [row.filter(like='go_rt').values[0], GO_RT_THRESHOLD],
-            'go_acc': [row.filter(like='go_acc').values[0], GO_ACC_THRESHOLD],
-            'go_omission_rate': [row.filter(like='go_omission_rate').values[0], OMISSION_RATE_THRESHOLD]
+            'go_rt': [np.array(row.filter(like='go_rt').values).flatten(), GO_RT_THRESHOLD],
+            'go_acc': [np.array(row.filter(like='go_acc').values).flatten(), GO_ACC_THRESHOLD],
+            'go_omission_rate': [np.array(row.filter(like='go_omission_rate').values).flatten(), OMISSION_RATE_THRESHOLD]
         }
         
         # Check stop_fail_acc specifically for low and high thresholds
@@ -73,12 +73,12 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         # Check other metrics
         for metric_name, (metric_value, *thresholds) in metrics_info.items():
-            # If multiple thresholds are provided, check each one
+            # If metric_value is already a numpy array, we don't need to check its size
             for threshold in thresholds:
-                if metric_value > 0:  # Ensure there are values to check
-                    for value in metric_value:
-                        if compare_to_threshold(metric_name, value, threshold):
-                            exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, metric_name, value, threshold)
+                # Iterate over the metric values (this handles both arrays and single values)
+                for value in np.atleast_1d(metric_value):  # Treat metric_value as an array
+                    if compare_to_threshold(metric_name, value, threshold):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, metric_name, value, threshold)
 
     return exclusion_df
 
