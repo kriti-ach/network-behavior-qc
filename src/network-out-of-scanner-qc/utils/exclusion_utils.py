@@ -22,9 +22,9 @@ from utils.qc_utils import sort_subject_ids
 def check_exclusion_criteria(task_name, task_csv, exclusion_df):
         if 'stop_signal' in task_name:
             exclusion_df = check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df)
+        if 'go_nogo' in task_name:
+            exclusion_df = check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df)
         return exclusion_df
-        # if 'go_nogo' in task_name:
-        #     check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df)
         # if 'n_back' in task_name:
         #     check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df)
         # if ('flanker' in task_name or 'directed_forgetting' in task_name or 
