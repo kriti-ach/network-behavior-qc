@@ -99,6 +99,7 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
         if index >= len(task_csv) - 4:
             continue
         subject_id = row['subject_id']
+        print(f"subject_id: {subject_id}")
 
         # Get actual column names for each metric type
         go_acc_cols = [col for col in task_csv.columns if '_go_acc' in col]
