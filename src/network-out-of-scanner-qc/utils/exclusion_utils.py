@@ -33,7 +33,7 @@ def check_exclusion_criteria(task_name, task_csv, exclusion_df):
 
 def compare_to_threshold(metric_name, metric_value, threshold):
     """Check if a metric value violates the exclusion criteria."""
-    return metric_value < threshold if 'low' in metric_name or 'accuracy' in metric_name else metric_value > threshold
+    return metric_value < threshold if 'low' in metric_name or 'acc' in metric_name else metric_value > threshold
 
 def append_exclusion_row(exclusion_df, subject_id, task_name, metric_name, metric_value, threshold):
     """Append a new exclusion row to the exclusion dataframe."""
@@ -51,6 +51,9 @@ def append_exclusion_row(exclusion_df, subject_id, task_name, metric_name, metri
 
 def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
     for index, row in task_csv.iterrows():
+        #ignore the last 4 rows (summary rows)
+        if index >= len(task_csv) - 4:
+            continue
         subject_id = row['subject_id']
 
         # Create a dictionary to hold metric values from the row
