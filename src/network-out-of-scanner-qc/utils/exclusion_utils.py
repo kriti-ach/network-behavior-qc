@@ -92,3 +92,41 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
     #sort by subject_id
     exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
+
+def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
+    for index, row in task_csv.iterrows():
+        #ignore the last 4 rows (summary rows)
+        if index >= len(task_csv) - 4:
+            continue
+        subject_id = row['subject_id']
+
+        # Get actual column names for each metric type
+        go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col]
+        nogo_acc_cols = [col for col in task_csv.columns if 'nogo_acc' in col]
+        go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col]
+
+        # If go accuracy < threshold AND nogo accuracy < threshold, then exclude
+        # Only check when the prefix (before go_acc/nogo_acc) matches
+        for col_name_go in go_acc_cols:
+            for col_name_nogo in nogo_acc_cols:
+                # Extract prefix before 'go_acc' and 'nogo_acc'
+                go_prefix = col_name_go.replace('_go_acc', '')
+                nogo_prefix = col_name_nogo.replace('_nogo_acc', '')
+                
+                # Only proceed if prefixes match
+                if go_prefix == nogo_prefix:
+                    go_acc_value = row[col_name_go]
+                    nogo_acc_value = row[col_name_nogo]
+                    if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
+                    if np.mean([go_acc_value, nogo_acc_value]) < ACC_THRESHOLD:
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, [col_name_go, col_name_nogo], np.mean([go_acc_value, nogo_acc_value]), ACC_THRESHOLD)
+
+        for col_name in go_omission_rate_cols:
+            value = row[col_name]
+            if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, OMISSION_RATE_THRESHOLD)
+    #sort by subject_id
+    exclusion_df = sort_subject_ids(exclusion_df)
+    return exclusion_df
