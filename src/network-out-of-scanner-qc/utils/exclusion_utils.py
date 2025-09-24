@@ -101,9 +101,9 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
         subject_id = row['subject_id']
 
         # Get actual column names for each metric type
-        go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col]
-        nogo_acc_cols = [col for col in task_csv.columns if 'nogo_acc' in col]
-        go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col]
+        go_acc_cols = [col for col in task_csv.columns if '_go_acc' in col]
+        nogo_acc_cols = [col for col in task_csv.columns if '_nogo_acc' in col]
+        go_omission_rate_cols = [col for col in task_csv.columns if '_go_omission_rate' in col]
 
         # If go accuracy < threshold AND nogo accuracy < threshold, then exclude
         # Only check when the prefix (before go_acc/nogo_acc) matches
@@ -117,7 +117,7 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 if go_prefix == nogo_prefix:
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
-                    if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
+                    if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('_nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
                     if np.mean([go_acc_value, nogo_acc_value]) < ACC_THRESHOLD:
