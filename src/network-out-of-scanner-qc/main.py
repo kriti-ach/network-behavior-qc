@@ -3,7 +3,7 @@ import glob
 from pathlib import Path
 import re
 
-from utils.utils import (
+from utils.qc_utils import (
     initialize_qc_csvs,
     extract_task_name_out_of_scanner,
     extract_task_name_fmri,

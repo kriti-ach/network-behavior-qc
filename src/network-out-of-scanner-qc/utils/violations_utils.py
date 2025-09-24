@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import re
 import numpy as np
-from qc.qc_utils import filter_to_test_trials, sort_subject_ids
+from utils.qc_utils import filter_to_test_trials, sort_subject_ids
 import matplotlib.pyplot as plt
 import seaborn as sns
 
