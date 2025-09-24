@@ -94,12 +94,13 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
     return exclusion_df
 
 def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
+    print(f"task_name: {task_name}")
+    print(f'task_csv.columns: {task_csv.columns}')
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
         if index >= len(task_csv) - 4:
             continue
         subject_id = row['subject_id']
-        print(f"subject_id: {subject_id}")
 
         # Get actual column names for each metric type
         go_acc_cols = [col for col in task_csv.columns if '_go_acc' in col]
