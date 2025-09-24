@@ -5,11 +5,11 @@ import re
 import numpy as np
 
 from utils.globals import (
-    STOP_ACC_LOW_THRESHOLD,
-    STOP_ACC_HIGH_THRESHOLD,
+    STOP_SUCCESS_ACC_LOW_THRESHOLD,
+    STOP_SUCCESS_ACC_HIGH_THRESHOLD,
     GO_RT_THRESHOLD,
-    GO_ACC_THRESHOLD,
-    NOGO_ACC_THRESHOLD,
+    GO_ACC_THRESHOLD_GO_NOGO,
+    NOGO_ACC_THRESHOLD_GO_NOGO,
     MISMATCH_1_BACK_THRESHOLD,
     MISMATCH_2_BACK_THRESHOLD,
     MATCH_1_BACK_THRESHOLD,
@@ -55,21 +55,21 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         # Create a dictionary to hold metric values from the row
         metrics_info = {
-            'stop_fail_acc': [row.filter(like='stop_fail_acc').values,
-                              STOP_ACC_LOW_THRESHOLD,
-                              STOP_ACC_HIGH_THRESHOLD],
+            'stop_fail_acc': [row.filter(like='stop_success').values,
+                              STOP_SUCCESS_ACC_LOW_THRESHOLD,
+                              STOP_SUCCESS_ACC_HIGH_THRESHOLD],
             'go_rt': [np.array(row.filter(like='go_rt').values).flatten(), GO_RT_THRESHOLD],
-            'go_acc': [np.array(row.filter(like='go_acc').values).flatten(), GO_ACC_THRESHOLD],
+            'go_acc': [np.array(row.filter(like='go_acc').values).flatten(), ACC_THRESHOLD],
             'go_omission_rate': [np.array(row.filter(like='go_omission_rate').values).flatten(), OMISSION_RATE_THRESHOLD]
         }
         
-        # Check stop_fail_acc specifically for low and high thresholds
-        stop_fail_acc_values = metrics_info['stop_fail_acc'][0]
-        for value in stop_fail_acc_values:
-            if compare_to_threshold('stop_fail_acc_low', value, STOP_ACC_LOW_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, 'stop_fail_acc', value, STOP_ACC_LOW_THRESHOLD)
-            if compare_to_threshold('stop_fail_acc_high', value, STOP_ACC_HIGH_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, 'stop_fail_acc', value, STOP_ACC_HIGH_THRESHOLD)
+        # Check stop_success specifically for low and high thresholds
+        stop_success_values = metrics_info['stop_success'][0]
+        for value in stop_success_values:
+            if compare_to_threshold('stop_success_low', value, STOP_SUCCESS_ACC_LOW_THRESHOLD):
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, 'stop_success', value, STOP_SUCCESS_ACC_LOW_THRESHOLD)
+            if compare_to_threshold('stop_success_high', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, 'stop_success', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD)
 
         # Check other metrics
         for metric_name, (metric_value, *thresholds) in metrics_info.items():
