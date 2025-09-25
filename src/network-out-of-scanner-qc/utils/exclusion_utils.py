@@ -136,5 +136,6 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, OMISSION_RATE_THRESHOLD)
     #sort by subject_id
     print(exclusion_df.head())
-    exclusion_df = sort_subject_ids(exclusion_df)
+    if len(exclusion_df) != 0:
+        exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
