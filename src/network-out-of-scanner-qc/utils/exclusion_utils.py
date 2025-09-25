@@ -103,11 +103,11 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
         subject_id = row['subject_id']
 
         # Get actual column names for each metric type
-        go_acc_cols = [col for col in task_csv.columns if '_go_acc' in col]
+        go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col and 'nogo_acc' not in col]
         print(f"go_acc_cols: {go_acc_cols}")
-        nogo_acc_cols = [col for col in task_csv.columns if '_nogo_acc' in col]
+        nogo_acc_cols = [col for col in task_csv.columns if 'nogo_acc' in col]
         print(f"nogo_acc_cols: {nogo_acc_cols}")
-        go_omission_rate_cols = [col for col in task_csv.columns if '_go_omission_rate' in col]
+        go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col and 'nogo_omission_rate' not in col]
         print(f"go_omission_rate_cols: {go_omission_rate_cols}")
 
         # If go accuracy < threshold AND nogo accuracy < threshold, then exclude
@@ -115,8 +115,8 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
         for col_name_go in go_acc_cols:
             for col_name_nogo in nogo_acc_cols:
                 # Extract prefix before 'go_acc' and 'nogo_acc'
-                go_prefix = col_name_go.replace('_go_acc', '')
-                nogo_prefix = col_name_nogo.replace('_nogo_acc', '')
+                go_prefix = col_name_go.replace('go_acc', '')
+                nogo_prefix = col_name_nogo.replace('nogo_acc', '')
                 print(f"go_prefix: {go_prefix}, nogo_prefix: {nogo_prefix}")
                 
                 # Only proceed if prefixes match
