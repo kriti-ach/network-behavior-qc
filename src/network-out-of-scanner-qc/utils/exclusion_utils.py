@@ -22,8 +22,8 @@ from utils.qc_utils import sort_subject_ids
 def check_exclusion_criteria(task_name, task_csv, exclusion_df):
         if 'stop_signal' in task_name:
             exclusion_df = check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df)
-        if 'go_nogo' in task_name:
-            exclusion_df = check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df)
+        # if 'go_nogo' in task_name:
+        #     exclusion_df = check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df)
         return exclusion_df
         # if 'n_back' in task_name:
         #     check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df)
@@ -94,8 +94,6 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
     return exclusion_df
 
 def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
-    print(f"task_name: {task_name}")
-    print(f'task_csv.columns: {task_csv.columns}')
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
         if index >= len(task_csv) - 4:
@@ -104,11 +102,8 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         # Get actual column names for each metric type
         go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col and 'nogo_acc' not in col]
-        print(f"go_acc_cols: {go_acc_cols}")
         nogo_acc_cols = [col for col in task_csv.columns if 'nogo_acc' in col]
-        print(f"nogo_acc_cols: {nogo_acc_cols}")
         go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col and 'nogo_omission_rate' not in col]
-        print(f"go_omission_rate_cols: {go_omission_rate_cols}")
 
         # If go accuracy < threshold AND nogo accuracy < threshold, then exclude
         # Only check when the prefix (before go_acc/nogo_acc) matches
@@ -117,13 +112,11 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 # Extract prefix before 'go_acc' and 'nogo_acc'
                 go_prefix = col_name_go.replace('go_acc', '')
                 nogo_prefix = col_name_nogo.replace('nogo_acc', '')
-                print(f"go_prefix: {go_prefix}, nogo_prefix: {nogo_prefix}")
                 
                 # Only proceed if prefixes match
                 if go_prefix == nogo_prefix:
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
-                    print(f"go_acc_value: {go_acc_value}, nogo_acc_value: {nogo_acc_value}")
                     if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('_nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
@@ -135,7 +128,6 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
             if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, OMISSION_RATE_THRESHOLD)
     #sort by subject_id
-    print(exclusion_df.head())
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
