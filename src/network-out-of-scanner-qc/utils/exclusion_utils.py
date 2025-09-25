@@ -210,13 +210,23 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                                 exclusion_df, subject_id, task_name, [col_name_mismatch_2, col_name_match_2], np.mean([mismatch_2_acc_value, match_2_acc_value]), 0.5
                             ) 
 
-
         # Omission rate checks (> .5)
-        if compare_to_threshold('match_1_omission_rate', match_1_omiss, OMISSION_RATE_THRESHOLD):
-            exclusion_df = append_exclusion_row(
-                exclusion_df, subject_id, task_name, 'match_1_omission_rate', match_1_omiss, OMISSION_RATE_THRESHOLD
-            )
-        if compare_to_threshold('match_2_omission_rate', match_2_omiss, OMISSION_RATE_THRESHOLD):
+        for col_name_match_1 in match_1_omiss:
+            if compare_to_threshold('match_1_omission_rate', col_name_match_1, OMISSION_RATE_THRESHOLD):
+                exclusion_df = append_exclusion_row(
+                    exclusion_df, subject_id, task_name, 'match_1_omission_rate', match_1_omiss, OMISSION_RATE_THRESHOLD
+                )
+        for col_name_match_2 in match_2_omiss:
+            if compare_to_threshold('match_2_omission_rate', col_name_match_2, OMISSION_RATE_THRESHOLD):
+                exclusion_df = append_exclusion_row(
+                    exclusion_df, subject_id, task_name, 'match_2_omission_rate', match_2_omiss, OMISSION_RATE_THRESHOLD
+                )
+        for col_name_mismatch_1 in mismatch_1_omiss:
+            if compare_to_threshold('mismatch_1_omission_rate', col_name_mismatch_1, OMISSION_RATE_THRESHOLD):
+                exclusion_df = append_exclusion_row(
+                    exclusion_df, subject_id, task_name, 'mismatch_1_omission_rate', mismatch_1_omiss, OMISSION_RATE_THRESHOLD
+                )
+        for col_name_mismatch_2 in mismatch_2_omiss:
             exclusion_df = append_exclusion_row(
                 exclusion_df, subject_id, task_name, 'match_2_omission_rate', match_2_omiss, OMISSION_RATE_THRESHOLD
             )
