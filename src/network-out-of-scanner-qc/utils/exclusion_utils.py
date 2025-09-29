@@ -17,7 +17,9 @@ from utils.globals import (
     MISMATCH_3_BACK_THRESHOLD,
     MATCH_3_BACK_THRESHOLD,
     ACC_THRESHOLD,
-    OMISSION_RATE_THRESHOLD
+    OMISSION_RATE_THRESHOLD,
+    LOWER_WEIGHT,
+    UPPER_WEIGHT
 )
 from utils.qc_utils import sort_subject_ids
 
@@ -38,13 +40,12 @@ def compare_to_threshold(metric_name, metric_value, threshold):
     """Check if a metric value violates the exclusion criteria."""
     return metric_value < threshold if 'low' in metric_name or 'acc' in metric_name else metric_value > threshold
 
-def append_exclusion_row(exclusion_df, subject_id, task_name, metric_name, metric_value, threshold):
+def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, threshold):
     """Append a new exclusion row to the exclusion dataframe."""
     exclusion_df = pd.concat([
         exclusion_df,
         pd.DataFrame({
             'subject_id': [subject_id],
-            'task_name': [task_name],
             'metric': [metric_name],
             'metric_value': [metric_value],
             'threshold': [threshold]
@@ -69,27 +70,27 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
         for col_name in stop_success_cols:
             value = row[col_name]
             if compare_to_threshold('stop_success_low', value, STOP_SUCCESS_ACC_LOW_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, STOP_SUCCESS_ACC_LOW_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_LOW_THRESHOLD)
             if compare_to_threshold('stop_success_high', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, STOP_SUCCESS_ACC_HIGH_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_HIGH_THRESHOLD)
 
         # Check go_rt columns
         for col_name in go_rt_cols:
             value = row[col_name]
             if compare_to_threshold('go_rt', value, GO_RT_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, GO_RT_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, GO_RT_THRESHOLD)
 
         # Check go_acc columns
         for col_name in go_acc_cols:
             value = row[col_name]
             if compare_to_threshold('go_acc', value, ACC_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, ACC_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD)
 
         # Check go_omission_rate columns
         for col_name in go_omission_rate_cols:
             value = row[col_name]
             if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, OMISSION_RATE_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD)
 
     #sort by subject_id
     exclusion_df = sort_subject_ids(exclusion_df)
@@ -120,15 +121,15 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
                     if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO) and compare_to_threshold('_nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
-                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
-                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
                     if np.mean([go_acc_value, nogo_acc_value]) < ACC_THRESHOLD:
-                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, [col_name_go, col_name_nogo], np.mean([go_acc_value, nogo_acc_value]), ACC_THRESHOLD)
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'mean_go_and_nogo_acc', np.mean([go_acc_value, nogo_acc_value]), ACC_THRESHOLD)
 
         for col_name in go_omission_rate_cols:
             value = row[col_name]
             if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, task_name, col_name, value, OMISSION_RATE_THRESHOLD)
+                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD)
     #sort by subject_id
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
@@ -165,10 +166,10 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     match_1_acc_value = row[col_name_match_1]
                     mismatch_1_acc_value = row[col_name_mismatch_1]
                     if not pd.isna(match_1_acc_value) and not pd.isna(mismatch_1_acc_value):
-                        weighted_1 = 0.2 * match_1_acc_value + 0.8 * mismatch_1_acc_value
+                        weighted_1 = LOWER_WEIGHT * match_1_acc_value + UPPER_WEIGHT * mismatch_1_acc_value
                         if compare_to_threshold('weighted_mean_1.0back_accuracy', weighted_1, ACC_THRESHOLD):
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_match_1, col_name_mismatch_1], weighted_1, ACC_THRESHOLD
+                                exclusion_df, subject_id, 'weighted_mean_1.0back_accuracy', weighted_1, ACC_THRESHOLD
                             )  
 
         # 2-back weighted mean (20% match, 80% mismatch) < .55
@@ -180,10 +181,10 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     match_2_acc_value = row[col_name_match_2]
                     mismatch_2_acc_value = row[col_name_mismatch_2]
                     if not pd.isna(match_2_acc_value) and not pd.isna(mismatch_2_acc_value):
-                        weighted_2 = 0.2 * match_2_acc_value + 0.8 * mismatch_2_acc_value
+                        weighted_2 = LOWER_WEIGHT * match_2_acc_value + UPPER_WEIGHT * mismatch_2_acc_value
                         if compare_to_threshold('weighted_mean_2.0back_accuracy', weighted_2, ACC_THRESHOLD):
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_match_2, col_name_mismatch_2], weighted_2, ACC_THRESHOLD
+                                exclusion_df, subject_id, 'weighted_mean_2.0back_accuracy', weighted_2, ACC_THRESHOLD
                             )
         # 3-back weighted mean (20% match, 80% mismatch) < .55
         for col_name_match_3 in match_3_acc:
@@ -194,10 +195,10 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     match_3_acc_value = row[col_name_match_3]
                     mismatch_3_acc_value = row[col_name_mismatch_3]
                     if not pd.isna(match_3_acc_value) and not pd.isna(mismatch_3_acc_value):
-                        weighted_3 = 0.2 * match_3_acc_value + 0.8 * mismatch_3_acc_value
+                        weighted_3 = LOWER_WEIGHT * match_3_acc_value + UPPER_WEIGHT * mismatch_3_acc_value
                         if compare_to_threshold('weighted_mean_3.0back_accuracy', weighted_3, ACC_THRESHOLD):
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_match_3, col_name_mismatch_3], weighted_3, ACC_THRESHOLD
+                                exclusion_df, subject_id, 'weighted_mean_3.0back_accuracy', weighted_3, ACC_THRESHOLD
                             )
         # mismatch_1 < .8 AND match_1 < .2
         for col_name_mismatch_1 in mismatch_1_acc:
@@ -211,7 +212,10 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                         if [compare_to_threshold('mismatch_1.0back_accuracy', mismatch_1_acc_value, MISMATCH_1_BACK_THRESHOLD) 
                         and compare_to_threshold('match_1.0back_accuracy', match_1_acc_value, MATCH_1_BACK_THRESHOLD)]:
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_mismatch_1, col_name_match_1], np.mean([mismatch_1_acc_value, match_1_acc_value]), 0.5
+                                exclusion_df, subject_id, 'mismatch_1.0back_accuracy', mismatch_1_acc_value, MISMATCH_1_BACK_THRESHOLD
+                            )
+                            exclusion_df = append_exclusion_row(
+                                exclusion_df, subject_id, 'match_1.0back_accuracy', match_1_acc_value, MATCH_1_BACK_THRESHOLD
                             )
 
         # mismatch_2 < .8 AND match_2 < .2
@@ -226,8 +230,12 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                         if [compare_to_threshold('mismatch_2.0back_accuracy', mismatch_2_acc_value, MISMATCH_2_BACK_THRESHOLD) 
                         and compare_to_threshold('match_2.0back_accuracy', match_2_acc_value, MATCH_2_BACK_THRESHOLD)]:
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_mismatch_2, col_name_match_2], np.mean([mismatch_2_acc_value, match_2_acc_value]), 0.5
-                            ) 
+                                exclusion_df, subject_id, 'mismatch_2.0back_accuracy', mismatch_2_acc_value, MISMATCH_2_BACK_THRESHOLD
+                            )
+                            exclusion_df = append_exclusion_row(
+                                exclusion_df, subject_id, 'match_2.0back_accuracy', match_2_acc_value, MATCH_2_BACK_THRESHOLD
+                            )
+
 
         # mismatch_3 < .8 AND match_3 < .2
         for col_name_mismatch_3 in mismatch_3_acc:
@@ -241,7 +249,10 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                         if [compare_to_threshold('mismatch_3.0back_accuracy', mismatch_3_acc_value, MISMATCH_3_BACK_THRESHOLD) 
                         and compare_to_threshold('match_3.0back_accuracy', match_3_acc_value, MATCH_3_BACK_THRESHOLD)]:
                             exclusion_df = append_exclusion_row(
-                                exclusion_df, subject_id, task_name, [col_name_mismatch_3, col_name_match_3], np.mean([mismatch_3_acc_value, match_3_acc_value]), 0.5
+                                exclusion_df, subject_id, 'mismatch_3.0back_accuracy', mismatch_3_acc_value, MISMATCH_3_BACK_THRESHOLD
+                            )
+                            exclusion_df = append_exclusion_row(
+                                exclusion_df, subject_id, 'match_3.0back_accuracy', match_3_acc_value, MATCH_3_BACK_THRESHOLD
                             )
 
         # Omission rate checks (> .5)
@@ -249,37 +260,37 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
             value = row[col_name_match_1]
             if compare_to_threshold('match_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'match_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'match_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
         for col_name_match_2 in match_2_omiss:
             value = row[col_name_match_2]
             if compare_to_threshold('match_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'match_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'match_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
         for col_name_match_3 in match_3_omiss:
             value = row[col_name_match_3]
             if compare_to_threshold('match_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'match_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'match_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
         for col_name_mismatch_1 in mismatch_1_omiss:
             value = row[col_name_mismatch_1]
             if compare_to_threshold('mismatch_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'mismatch_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'mismatch_1.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
         for col_name_mismatch_2 in mismatch_2_omiss:
             value = row[col_name_mismatch_2]
             if compare_to_threshold('mismatch_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'mismatch_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'mismatch_2.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
         for col_name_mismatch_3 in mismatch_3_omiss:
             value = row[col_name_mismatch_3]
             if compare_to_threshold('mismatch_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD):
                 exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, task_name, 'mismatch_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
+                    exclusion_df, subject_id, 'mismatch_3.0back_omission_rate', value, OMISSION_RATE_THRESHOLD
                 )
 
     #sort by subject_id
