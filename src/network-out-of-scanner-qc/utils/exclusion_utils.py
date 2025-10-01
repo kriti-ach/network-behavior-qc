@@ -38,10 +38,7 @@ def check_exclusion_criteria(task_name, task_csv, exclusion_df):
 
 def compare_to_threshold(metric_name, metric_value, threshold):
     """Check if a metric value violates the exclusion criteria."""
-    if 'match' in metric_name or 'mismatch' in metric_name:
-        print(f'metric_name: {metric_name}, metric_value: {metric_value}, threshold: {threshold}')
-        print(f'metric value > threshold: {metric_value > threshold}')
-    return metric_value > threshold
+    return metric_value < threshold if 'low' in metric_name or 'acc' in metric_name else metric_value > threshold
 
 def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, threshold):
     """Append a new exclusion row to the exclusion dataframe."""
@@ -214,6 +211,8 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     if not pd.isna(mismatch_1_acc_value) and not pd.isna(match_1_acc_value):
                         if [compare_to_threshold('mismatch_1.0back_acc', mismatch_1_acc_value, MISMATCH_1_BACK_THRESHOLD) 
                         and compare_to_threshold('match_1.0back_acc', match_1_acc_value, MATCH_1_BACK_THRESHOLD)]:
+                            print(f'mismatch_1.0back_acc: {mismatch_1_acc_value}, mismatch_1.0back_acc threshold: {MISMATCH_1_BACK_THRESHOLD}')
+                            print(f'match_1.0back_acc: {match_1_acc_value}, match_1.0back_acc threshold: {MATCH_1_BACK_THRESHOLD}')
                             exclusion_df = append_exclusion_row(
                                 exclusion_df, subject_id, 'mismatch_1.0back_acc', mismatch_1_acc_value, MISMATCH_1_BACK_THRESHOLD
                             )
@@ -232,6 +231,8 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     if not pd.isna(mismatch_2_acc_value) and not pd.isna(match_2_acc_value):
                         if [compare_to_threshold('mismatch_2.0back_acc', mismatch_2_acc_value, MISMATCH_2_BACK_THRESHOLD) 
                         and compare_to_threshold('match_2.0back_acc', match_2_acc_value, MATCH_2_BACK_THRESHOLD)]:
+                            print(f'mismatch_2.0back_acc: {mismatch_2_acc_value}, mismatch_2.0back_acc threshold: {MISMATCH_2_BACK_THRESHOLD}')
+                            print(f'match_2.0back_acc: {match_2_acc_value}, match_2.0back_acc threshold: {MATCH_2_BACK_THRESHOLD}')
                             exclusion_df = append_exclusion_row(
                                 exclusion_df, subject_id, 'mismatch_2.0back_acc', mismatch_2_acc_value, MISMATCH_2_BACK_THRESHOLD
                             )
@@ -251,6 +252,8 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     if not pd.isna(mismatch_3_acc_value) and not pd.isna(match_3_acc_value):
                         if [compare_to_threshold('mismatch_3.0back_acc', mismatch_3_acc_value, MISMATCH_3_BACK_THRESHOLD) 
                         and compare_to_threshold('match_3.0back_acc', match_3_acc_value, MATCH_3_BACK_THRESHOLD)]:
+                            print(f'mismatch_3.0back_acc: {mismatch_3_acc_value}, mismatch_3.0back_acc threshold: {MISMATCH_3_BACK_THRESHOLD}')
+                            print(f'match_3.0back_acc: {match_3_acc_value}, match_3.0back_acc threshold: {MATCH_3_BACK_THRESHOLD}')
                             exclusion_df = append_exclusion_row(
                                 exclusion_df, subject_id, 'mismatch_3.0back_acc', mismatch_3_acc_value, MISMATCH_3_BACK_THRESHOLD
                             )
