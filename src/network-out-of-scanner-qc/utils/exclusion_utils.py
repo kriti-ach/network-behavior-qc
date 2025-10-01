@@ -19,7 +19,8 @@ from utils.globals import (
     ACC_THRESHOLD,
     OMISSION_RATE_THRESHOLD,
     LOWER_WEIGHT,
-    UPPER_WEIGHT
+    UPPER_WEIGHT,
+    SUMMARY_ROWS
 )
 from utils.qc_utils import sort_subject_ids
 
@@ -56,7 +57,7 @@ def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, th
 def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
-        if index >= len(task_csv) - 4:
+        if index >= len(task_csv) - SUMMARY_ROWS:
             continue
         subject_id = row['subject_id']
 
@@ -99,7 +100,7 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
 def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
-        if index >= len(task_csv) - 4:
+        if index >= len(task_csv) - SUMMARY_ROWS:
             continue
         subject_id = row['subject_id']
 
@@ -138,7 +139,7 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
 def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
-        if index >= len(task_csv) - 4:
+        if index >= len(task_csv) - SUMMARY_ROWS:
             continue
         subject_id = row['subject_id']
 
@@ -220,6 +221,8 @@ def _nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols):
 
 def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
     for index, row in task_csv.iterrows():
+        if index >= len(task_csv) - SUMMARY_ROWS:
+            continue
         subject_id = row['subject_id']
         for col_name in task_csv.columns:
             acc_cols = [col for col in task_csv.columns if 'acc' in col]
