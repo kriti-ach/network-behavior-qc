@@ -235,4 +235,7 @@ def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
                 value = row[col_name]
                 if compare_to_threshold(col_name, value, OMISSION_RATE_THRESHOLD):
                     exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD)
+    #sort by subject_id
+    if len(exclusion_df) != 0:
+        exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
