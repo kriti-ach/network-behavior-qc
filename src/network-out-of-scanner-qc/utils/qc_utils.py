@@ -188,29 +188,24 @@ def get_task_columns(task_name, sample_df=None):
             if sample_df is not None:
                 flanker_conditions = [c for c in sample_df['flanker_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(flanker_conditions)
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'go_nogo' in task_name:
             if sample_df is not None:
                 go_conditions = [c for c in sample_df['go_nogo_condition'].unique() if pd.notna(c) and c == 'go']
                 return base_columns + create_stop_signal_dual_columns(go_conditions, include_nogo_commission=True)
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'shape_matching' in task_name:
             if sample_df is not None:
                 shape_conditions = [c for c in sample_df['shape_matching_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(shape_conditions)
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'directed_forgetting' in task_name:
             if sample_df is not None:
                 df_conditions = [c for c in sample_df['directed_forgetting_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(df_conditions)
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'spatial_task_switching' in task_name:
             if sample_df is not None:
                 spatial_conditions = [c for c in sample_df['task_switch'].unique() if pd.notna(c) and c != 'na']
                 cols = base_columns + create_stop_signal_dual_columns(spatial_conditions)
                 cols.extend(['parity_accuracy', 'magnitude_accuracy'])
                 return cols
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'cued_task_switching' in task_name:
             if sample_df is not None:
                 conditions = []
@@ -224,7 +219,6 @@ def get_task_columns(task_name, sample_df=None):
                 cols = base_columns + create_stop_signal_dual_columns(conditions)
                 cols.extend(['parity_accuracy', 'magnitude_accuracy'])
                 return cols
-            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'n_back' in task_name:
             if sample_df is not None:
                 conditions = []
@@ -235,7 +229,6 @@ def get_task_columns(task_name, sample_df=None):
                                 condition_name = f"{n_back_condition}_{delay}back"
                                 conditions.append(condition_name)
                 return base_columns + create_stop_signal_dual_columns(conditions)
-            return base_columns
         
         # Handle regular dual tasks (non-stop signal)
         elif 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
@@ -290,7 +283,7 @@ def get_task_columns(task_name, sample_df=None):
             return cols
         elif 'shape_matching' in task_name and 'cued_task_switching' in task_name or 'shape_matching' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, SHAPE_MATCHING_WITH_CUED_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['same_accuracy', 'different_accuracy'])
             return cols
         elif 'directed_forgetting' in task_name and 'cued_task_switching' in task_name or 'directedForgetting' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS)
@@ -308,7 +301,6 @@ def get_task_columns(task_name, sample_df=None):
             cols = get_dual_n_back_columns(base_columns, sample_df, cuedts=True)
             cols.extend(['parity_accuracy', 'magnitude_accuracy'])
             return cols
-            return get_dual_n_back_columns(base_columns, sample_df, cuedts=True)
         elif 'n_back' in task_name and 'spatial_task_switching' in task_name or 'NBack' in task_name and 'spatialTS' in task_name:
             cols = get_dual_n_back_columns(base_columns, sample_df, 'task_switch')
             cols.extend(['parity_accuracy', 'magnitude_accuracy'])
@@ -507,6 +499,21 @@ def calculate_commission_rate(df, mask_commission, total_num_trials):
     num_commissions = len(df[mask_commission])
     return num_commissions / total_num_trials if total_num_trials > 0 else np.nan
 
+def add_category_accuracies(df, column_name, label_to_metric_key, metrics):
+    """
+    Add accuracy metrics aggregated over all trials for specified category labels.
+
+    Args:
+        df (pd.DataFrame): Input dataframe
+        column_name (str): Column to derive category labels from
+        label_to_metric_key (dict): Mapping from label (lowercased) to output metric key
+        metrics (dict): Metrics dict to populate
+    """
+    series = df[column_name].apply(lambda x: str(x).lower())
+    for label, metric_key in label_to_metric_key.items():
+        mask = series == label
+        metrics[metric_key] = calculate_accuracy(df, mask)
+
 def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     """
     Calculate all basic metrics (accuracy, RT, omission rate, commission rate) for a condition.
@@ -638,20 +645,29 @@ def compute_cued_task_switching_metrics(
             print(f"Skipping malformed condition: {cond} ({e})")
             continue
     if condition_type == 'directed_forgetting':
-        task_series = df['cued_dimension'].apply(lambda x: str(x).lower())
-        remember_mask = task_series == 'remember'
-        forget_mask = task_series == 'forget'
-        metrics['remember_accuracy'] = calculate_accuracy(df, remember_mask)
-        metrics['forget_accuracy'] = calculate_accuracy(df, forget_mask)
+        add_category_accuracies(
+            df,
+            'cued_dimension',
+            {'remember': 'remember_accuracy', 'forget': 'forget_accuracy'},
+            metrics
+        )
+    elif condition_type == 'shape_matching':
+        add_category_accuracies(
+            df,
+            'task',
+            {'same': 'same_accuracy', 'different': 'different_accuracy'},
+            metrics
+        )
     else:
-        task_series = df['task'].apply(lambda x: str(x).lower())
-        parity_mask = task_series == 'parity'
-        magnitude_mask = task_series == 'magnitude'
-        metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
-        metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
+        add_category_accuracies(
+            df,
+            'task',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
     return metrics
 
-def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False):
+def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False, spatial_task_switching=False, cued_task_switching=False):
     """
     Compute metrics for n-back tasks (single, dual, or n-back with cuedts).
     - df: DataFrame
@@ -661,6 +677,7 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
     - cuedts: if True, handle n-back with cued task switching
     - gonogo: if True, handle n-back with go_nogo task switching
     - shapematching: if True, handle n-back with shape matching task switching
+    - spatial_task_switching: if True, handle n-back with spatial task switching
     Returns: dict of metrics
     """
     metrics = {}
@@ -685,6 +702,12 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                             (df['task_condition'] == taskc)
                         )
                         calculate_basic_metrics(df, mask_acc, col_prefix, metrics)
+        add_category_accuracies(
+            df,
+            'task',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
         return metrics
     elif gonogo:
         for n_back_condition in df['n_back_condition'].str.lower().unique():
@@ -722,6 +745,20 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                         condition = f"{n_back_condition}_{delay}back_{paired_cond.lower()}"
                     mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col].str.lower() == paired_cond.lower())
                     calculate_basic_metrics(df, mask_acc, condition, metrics)
+        if spatial_task_switching:
+            add_category_accuracies(
+                df,
+                'predictable_dimension',
+                {'1-back': '1_back_accuracy', '2-back': '2_back_accuracy'},
+                metrics
+            )
+        if cued_task_switching:
+            add_category_accuracies(
+                df,
+                'curr_task',
+                {'one_back': 'one_back_accuracy', 'two_back': 'two_back_accuracy'},
+                metrics
+            )
     return metrics
 
 def compute_cued_spatial_task_switching_metrics(df, condition_list):
@@ -783,11 +820,12 @@ def compute_cued_spatial_task_switching_metrics(df, condition_list):
         except Exception as e:
             print(f"Error parsing condition {cond}: {e}")
             continue
-    task_series = df['predictable_dimension'].apply(lambda x: str(x).lower())
-    parity_mask = task_series == 'parity'
-    magnitude_mask = task_series == 'magnitude'
-    metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
-    metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
+    add_category_accuracies(
+            df,
+            'predictable_dimension',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
     return metrics
 
 def get_task_metrics(df, task_name):
@@ -881,7 +919,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'directed_forgetting': 'directed_forgetting_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
         
         elif ('spatial_task_switching' in task_name and 'flanker' in task_name) or ('spatialTS' in task_name and 'flanker' in task_name):
             conditions = {
@@ -892,7 +930,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'flanker': 'flanker_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
         
         elif ('spatial_task_switching' in task_name and 'go_nogo' in task_name) or ('spatialTS' in task_name and 'go_nogo' in task_name):
             conditions = {
@@ -903,7 +941,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'go_nogo': 'go_nogo_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
         
         elif ('spatial_task_switching' in task_name and 'shape_matching' in task_name) or ('spatialTS' in task_name and 'shape_matching' in task_name):
             conditions = {
@@ -914,7 +952,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'shape_matching': 'shape_matching_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
         
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             return compute_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
@@ -940,10 +978,10 @@ def get_task_metrics(df, task_name):
             paired_conditions = [c for c in df['directed_forgetting_condition'].unique() if pd.notna(c)]
             return compute_n_back_metrics(df, None, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions)
         elif ('n_back' in task_name and 'cued_task_switching' in task_name) or ('NBack' in task_name and 'CuedTS' in task_name):
-            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=None, cuedts=True)
+            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=None, cuedts=True, cued_task_switching=True)
         elif ('n_back' in task_name and 'spatial_task_switching' in task_name) or ('NBack' in task_name and 'spatialTS' in task_name):
             paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
-            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions)
+            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions, spatial_task_switching=True)
         elif ('stop_signal' in task_name and 'flanker' in task_name) or ('stopSignal' in task_name and 'flanker' in task_name):
             paired_conditions = [c for c in df['flanker_condition'].unique() if pd.notna(c)]
             return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='flanker_condition', paired_conditions=paired_conditions, stim_col='center_letter')
@@ -968,7 +1006,7 @@ def get_task_metrics(df, task_name):
             return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions, stim_col='directed_forgetting_condition')
         elif ('stop_signal' in task_name and 'spatial_task_switching' in task_name) or ('stopSignal' in task_name and 'spatialTS' in task_name):
             paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
-            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='task_switch', paired_conditions=paired_conditions, stim_cols=['number', 'predictable_dimension'])
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='task_switch', paired_conditions=paired_conditions, stim_cols=['number', 'predictable_dimension'], spatial_task_switching=True)
         elif ('stop_signal' in task_name and 'n_back' in task_name) or ('stopSignal' in task_name and 'NBack' in task_name):
             paired_conditions = []
             for n_back_condition in df['n_back_condition'].unique():
@@ -988,7 +1026,7 @@ def get_task_metrics(df, task_name):
                             if cue_condition == "stay" and task_condition == "switch":
                                 continue
                             paired_conditions.append(f"t{task_condition}_c{cue_condition}")
-            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col=None, paired_conditions=paired_conditions, stim_cols=['stim_number', 'task'])
+            return compute_stop_signal_metrics(df, dual_task=True, paired_task_col=None, paired_conditions=paired_conditions, stim_cols=['stim_number', 'task'], cued_task_switching=True)
         # Add more dual n-back pairings as needed
     else:
         # Special handling for n-back task
@@ -1022,7 +1060,7 @@ def get_task_metrics(df, task_name):
     
         return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
 
-def calculate_metrics(df, conditions, condition_columns, is_dual_task):
+def calculate_metrics(df, conditions, condition_columns, is_dual_task, spatial_task_switching=False):
     """
     Calculate RT and accuracy metrics for any task.
     
@@ -1031,6 +1069,7 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
         conditions (dict): Dictionary of task names and their conditions
         condition_columns (dict): Dictionary of task names and their condition column names
         is_dual_task (bool): Whether this is a dual task
+        spatial_task_switching (bool): Whether this is a spatial task switching task
         
     Returns:
         dict: Dictionary containing task-specific metrics
@@ -1059,6 +1098,13 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task):
                     calculate_go_nogo_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
                 else:
                     calculate_basic_metrics(df, mask_acc, f'{cond1}_{cond2}', metrics)
+        if spatial_task_switching:
+            add_category_accuracies(
+                df,
+                'predictable_dimension',
+                {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+                metrics
+            )
     else:
         # For single tasks, just iterate through conditions
         task = list(conditions.keys())[0]
@@ -1182,7 +1228,7 @@ def calculate_stop_signal_ssd_stats(df):
     
     return metrics
 
-def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, stim_col=None, stim_cols=None):
+def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, stim_col=None, stim_cols=None, cued_task_switching=False, spatial_task_switching=False):
     """
     Calculate stop signal metrics for a single condition in dual task.
     
@@ -1264,6 +1310,21 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     
     # Calculate SSRT for this condition
     metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask, stim_cols=stim_cols)
+
+    if cued_task_switching:
+        add_category_accuracies(
+            df,
+            'task',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
+    elif spatial_task_switching:
+        add_category_accuracies(
+            df,
+            'predictable_dimension',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
     
     return metrics
 
@@ -1299,7 +1360,7 @@ def parse_dual_task_condition(paired_cond, paired_task_col):
         else:
             return None, None
 
-def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, paired_conditions=None, stim_col=None, stim_cols=[]):
+def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, paired_conditions=None, stim_col=None, stim_cols=[], cued_task_switching=False, spatial_task_switching=False):
     """
     Compute stop signal metrics for single stop signal tasks or dual tasks with stop signal.
     - df: DataFrame
@@ -1337,7 +1398,7 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
             
             # Calculate metrics for this condition
             condition_metrics = calculate_dual_stop_signal_condition_metrics(
-                df, paired_cond, paired_mask, stim_col, stim_cols
+                df, paired_cond, paired_mask, stim_col, stim_cols, cued_task_switching, spatial_task_switching
             )
             metrics.update(condition_metrics)
         
