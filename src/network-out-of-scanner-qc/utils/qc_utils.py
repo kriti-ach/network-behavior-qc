@@ -294,7 +294,7 @@ def get_task_columns(task_name, sample_df=None):
             return cols
         elif 'directed_forgetting' in task_name and 'cued_task_switching' in task_name or 'directedForgetting' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['remember_accuracy', 'forget_accuracy'])
             return cols
         elif 'go_nogo' in task_name and 'n_back' in task_name or 'go_nogo' in task_name and 'NBack' in task_name:
             return get_dual_n_back_columns(base_columns, sample_df, 'go_nogo_condition', gonogo=True)
@@ -637,11 +637,18 @@ def compute_cued_task_switching_metrics(
         except Exception as e:
             print(f"Skipping malformed condition: {cond} ({e})")
             continue
-    task_series = df['task'].apply(lambda x: str(x).lower())
-    parity_mask = task_series == 'parity'
-    magnitude_mask = task_series == 'magnitude'
-    metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
-    metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
+    if condition_type == 'directed_forgetting':
+        task_series = df['cued_dimension'].apply(lambda x: str(x).lower())
+        remember_mask = task_series == 'remember'
+        forget_mask = task_series == 'forget'
+        metrics['remember_accuracy'] = calculate_accuracy(df, remember_mask)
+        metrics['forget_accuracy'] = calculate_accuracy(df, forget_mask)
+    else:
+        task_series = df['task'].apply(lambda x: str(x).lower())
+        parity_mask = task_series == 'parity'
+        magnitude_mask = task_series == 'magnitude'
+        metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
+        metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
     return metrics
 
 def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False):
