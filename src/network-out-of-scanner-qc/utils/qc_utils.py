@@ -188,24 +188,29 @@ def get_task_columns(task_name, sample_df=None):
             if sample_df is not None:
                 flanker_conditions = [c for c in sample_df['flanker_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(flanker_conditions)
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'go_nogo' in task_name:
             if sample_df is not None:
                 go_conditions = [c for c in sample_df['go_nogo_condition'].unique() if pd.notna(c) and c == 'go']
                 return base_columns + create_stop_signal_dual_columns(go_conditions, include_nogo_commission=True)
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'shape_matching' in task_name:
             if sample_df is not None:
                 shape_conditions = [c for c in sample_df['shape_matching_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(shape_conditions)
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'directed_forgetting' in task_name:
             if sample_df is not None:
                 df_conditions = [c for c in sample_df['directed_forgetting_condition'].unique() if pd.notna(c)]
                 return base_columns + create_stop_signal_dual_columns(df_conditions)
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'spatial_task_switching' in task_name:
             if sample_df is not None:
                 spatial_conditions = [c for c in sample_df['task_switch'].unique() if pd.notna(c) and c != 'na']
                 cols = base_columns + create_stop_signal_dual_columns(spatial_conditions)
                 cols.extend(['parity_accuracy', 'magnitude_accuracy'])
                 return cols
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'cued_task_switching' in task_name:
             if sample_df is not None:
                 conditions = []
@@ -219,6 +224,7 @@ def get_task_columns(task_name, sample_df=None):
                 cols = base_columns + create_stop_signal_dual_columns(conditions)
                 cols.extend(['parity_accuracy', 'magnitude_accuracy'])
                 return cols
+            return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'n_back' in task_name:
             if sample_df is not None:
                 conditions = []
@@ -229,6 +235,8 @@ def get_task_columns(task_name, sample_df=None):
                                 condition_name = f"{n_back_condition}_{delay}back"
                                 conditions.append(condition_name)
                 return base_columns + create_stop_signal_dual_columns(conditions)
+            # Fallback when no sample_df is provided during initialization
+            return base_columns
         
         # Handle regular dual tasks (non-stop signal)
         elif 'directed_forgetting' in task_name and 'flanker' in task_name or 'directedForgetting' in task_name and 'flanker' in task_name:
@@ -912,7 +920,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'directed_forgetting': 'directed_forgetting_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatialts=True)
         
         elif ('spatial_task_switching' in task_name and 'flanker' in task_name) or ('spatialTS' in task_name and 'flanker' in task_name):
             conditions = {
@@ -923,7 +931,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'flanker': 'flanker_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatialts=True)
         
         elif ('spatial_task_switching' in task_name and 'go_nogo' in task_name) or ('spatialTS' in task_name and 'go_nogo' in task_name):
             conditions = {
@@ -934,7 +942,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'go_nogo': 'go_nogo_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatialts=True)
         
         elif ('spatial_task_switching' in task_name and 'shape_matching' in task_name) or ('spatialTS' in task_name and 'shape_matching' in task_name):
             conditions = {
@@ -945,7 +953,7 @@ def get_task_metrics(df, task_name):
                 'spatial_task_switching': 'task_switch',
                 'shape_matching': 'shape_matching_condition'
             }
-            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatial_task_switching=True)
+            return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatialts=True)
         
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             return compute_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
@@ -971,10 +979,10 @@ def get_task_metrics(df, task_name):
             paired_conditions = [c for c in df['directed_forgetting_condition'].unique() if pd.notna(c)]
             return compute_n_back_metrics(df, None, paired_task_col='directed_forgetting_condition', paired_conditions=paired_conditions)
         elif ('n_back' in task_name and 'cued_task_switching' in task_name) or ('NBack' in task_name and 'CuedTS' in task_name):
-            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=None, cuedts=True, cued_task_switching=True)
+            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=None, cuedts=True)
         elif ('n_back' in task_name and 'spatial_task_switching' in task_name) or ('NBack' in task_name and 'spatialTS' in task_name):
             paired_conditions = [c for c in df['task_switch'].unique() if pd.notna(c) and c != 'na']
-            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions, spatial_task_switching=True)
+            return compute_n_back_metrics(df, None, paired_task_col='task_switch', paired_conditions=paired_conditions, spatialts=True)
         elif ('stop_signal' in task_name and 'flanker' in task_name) or ('stopSignal' in task_name and 'flanker' in task_name):
             paired_conditions = [c for c in df['flanker_condition'].unique() if pd.notna(c)]
             return compute_stop_signal_metrics(df, dual_task=True, paired_task_col='flanker_condition', paired_conditions=paired_conditions, stim_col='center_letter')
