@@ -525,9 +525,11 @@ def add_category_accuracies(df, column_name, label_to_metric_key, metrics, stops
         if stopsignal:
             mask = mask & (df['SS_trial_type'] == 'go')
         if cuedts:
-            metrics[metric_key] = df[mask]['key_press'] == df[mask]['correct_response'].mean()
+            print(len(df[mask]['key_press'] == df[mask]['correct_response']))
+            metrics[metric_key] = (df[mask]['key_press'] == df[mask]['correct_response']).mean()
+            print(metrics[metric_key])
         else:
-            metrics[metric_key] = df[mask]['correct_trial'].mean()
+            metrics[metric_key] = calculate_accuracy(df, mask)
 
 def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     """
