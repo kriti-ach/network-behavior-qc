@@ -147,8 +147,7 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         for level in [1, 2, 3]:
             cols = _nback_get_columns(task_csv, level)
-            exclusion_df = _nback_flag_weighted_means(exclusion_df, subject_id, row, level, cols)
-            exclusion_df = _nback_flag_joint_accuracy(exclusion_df, subject_id, row, level, cols)
+            exclusion_df = _nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols)
             exclusion_df = _nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols)
 
     #sort by subject_id
@@ -169,41 +168,23 @@ def _nback_get_columns(task_csv, level):
         'mismatch_omiss': mismatch_omiss,
     }
 
-def _nback_iter_pairs(match_cols, mismatch_cols, level):
-    match_prefix = f'match_{level}.0back'
-    mismatch_prefix = f'mismatch_{level}.0back'
-    match_map = {c.replace(match_prefix, ''): c for c in match_cols}
-    mismatch_map = {c.replace(mismatch_prefix, ''): c for c in mismatch_cols}
-    for suffix in set(match_map.keys()).intersection(mismatch_map.keys()):
-        yield match_map[suffix], mismatch_map[suffix]
-
-def _nback_flag_weighted_means(exclusion_df, subject_id, row, level, cols):
-    for match_col, mismatch_col in _nback_iter_pairs(cols['match_acc'], cols['mismatch_acc'], level):
-        match_val = row[match_col]
-        mismatch_val = row[mismatch_col]
-        if not pd.isna(match_val) and not pd.isna(mismatch_val):
-            weighted = LOWER_WEIGHT * match_val + UPPER_WEIGHT * mismatch_val
-            if compare_to_threshold(f'weighted_mean_{level}.0back_acc', weighted, ACC_THRESHOLD):
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'weighted_mean_{level}.0back_acc', weighted, ACC_THRESHOLD
-                )
-    return exclusion_df
-
-def _nback_flag_joint_accuracy(exclusion_df, subject_id, row, level, cols):
+def _nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols):
     mismatch_threshold = {1: MISMATCH_1_BACK_THRESHOLD, 2: MISMATCH_2_BACK_THRESHOLD, 3: MISMATCH_3_BACK_THRESHOLD}[level]
     match_threshold = {1: MATCH_1_BACK_THRESHOLD, 2: MATCH_2_BACK_THRESHOLD, 3: MATCH_3_BACK_THRESHOLD}[level]
-    for match_col, mismatch_col in _nback_iter_pairs(cols['match_acc'], cols['mismatch_acc'], level):
-        mismatch_val = row[mismatch_col]
-        match_val = row[match_col]
-        if not pd.isna(mismatch_val) and not pd.isna(match_val):
-            if compare_to_threshold(f'mismatch_{level}.0back_acc', mismatch_val, mismatch_threshold) and \
-               compare_to_threshold(f'match_{level}.0back_acc', match_val, match_threshold):
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'mismatch_{level}.0back_acc', mismatch_val, mismatch_threshold
-                )
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'match_{level}.0back_acc', match_val, match_threshold
-                )
+    # Flag mismatch accuracy below threshold
+    for mismatch_col in cols['mismatch_acc']:
+        val = row[mismatch_col]
+        if compare_to_threshold(f'mismatch_{level}.0back_acc', val, mismatch_threshold):
+            exclusion_df = append_exclusion_row(
+                exclusion_df, subject_id, f'mismatch_{level}.0back_acc', val, mismatch_threshold
+            )
+    # Flag match accuracy below threshold
+    for match_col in cols['match_acc']:
+        val = row[match_col]
+        if compare_to_threshold(f'match_{level}.0back_acc', val, match_threshold):
+            exclusion_df = append_exclusion_row(
+                exclusion_df, subject_id, f'match_{level}.0back_acc', val, match_threshold
+            )
     return exclusion_df
 
 def _nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols):
