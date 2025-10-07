@@ -639,13 +639,6 @@ def compute_cued_task_switching_metrics(
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
                 calculate_go_nogo_metrics(df, mask_acc, cond, metrics)
-                add_category_accuracies(
-                    df,
-                    'go_nogo_condition',
-                    {'go': 'go_accuracy', 'nogo': 'nogo_accuracy'},
-                    metrics,
-                    gonogo=True
-                )
             elif condition_type == 'shape_matching':
                 # cond format: {shape_matching}_t{task}_c{cue}
                 shape_matching, t_part = cond.split('_t')
@@ -656,12 +649,6 @@ def compute_cued_task_switching_metrics(
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
-                add_category_accuracies(
-                    df,
-                    'task',
-                    {'same': 'same_accuracy', 'different': 'different_accuracy'},
-                    metrics
-                )
             elif condition_type == 'directed_forgetting':
                 # cond format: {directed_forgetting}_t{task}_c{cue}
                 directed_forgetting, t_part = cond.split('_t')
@@ -672,22 +659,38 @@ def compute_cued_task_switching_metrics(
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
-                add_category_accuracies(
-                    df,
-                    'cued_dimension',
-                    {'remember': 'remember_accuracy', 'forget': 'forget_accuracy'},
-                    metrics
-                )
-            else: 
-                add_category_accuracies(
-                    df,
-                    'task',
-                    {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
-                    metrics
-                )
         except Exception as e:
             print(f"Skipping malformed condition: {cond} ({e})")
             continue
+    if condition_type == 'directed_forgetting':
+        add_category_accuracies(
+            df,
+            'cued_dimension',
+            {'remember': 'remember_accuracy', 'forget': 'forget_accuracy'},
+            metrics
+        )
+    elif condition_type == 'shape_matching':
+        add_category_accuracies(
+            df,
+            'task',
+            {'same': 'same_accuracy', 'different': 'different_accuracy'},
+            metrics
+        )
+    elif condition_type == 'go_nogo':
+        add_category_accuracies(
+            df,
+            'go_nogo_condition',
+            {'go': 'go_accuracy', 'nogo': 'nogo_accuracy'},
+            metrics,
+            gonogo=True
+        )
+    else:
+        add_category_accuracies(
+            df,
+            'task',
+            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            metrics
+        )
     return metrics
 
 def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False, spatialts=False):
