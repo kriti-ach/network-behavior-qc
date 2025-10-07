@@ -19,8 +19,6 @@ from utils.globals import (
     MATCH_3_BACK_THRESHOLD,
     ACC_THRESHOLD,
     OMISSION_RATE_THRESHOLD,
-    LOWER_WEIGHT,
-    UPPER_WEIGHT,
     SUMMARY_ROWS
 )
 from utils.qc_utils import sort_subject_ids

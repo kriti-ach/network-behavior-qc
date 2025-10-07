@@ -606,6 +606,11 @@ def compute_cued_task_switching_metrics(
         except Exception as e:
             print(f"Skipping malformed condition: {cond} ({e})")
             continue
+    task_series = df['task'].apply(lambda x: str(x).lower())
+    parity_mask = task_series == 'parity'
+    magnitude_mask = task_series == 'magnitude'
+    metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
+    metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
     return metrics
 
 def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_conditions=None, cuedts=False, gonogo=False, shapematching=False):
@@ -740,6 +745,11 @@ def compute_cued_spatial_task_switching_metrics(df, condition_list):
         except Exception as e:
             print(f"Error parsing condition {cond}: {e}")
             continue
+    task_series = df['predictable_dimension'].apply(lambda x: str(x).lower())
+    parity_mask = task_series == 'parity'
+    magnitude_mask = task_series == 'magnitude'
+    metrics['parity_accuracy'] = calculate_accuracy(df, parity_mask)
+    metrics['magnitude_accuracy'] = calculate_accuracy(df, magnitude_mask)
     return metrics
 
 def get_task_metrics(df, task_name):
