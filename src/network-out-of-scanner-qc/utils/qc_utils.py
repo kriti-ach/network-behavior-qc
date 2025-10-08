@@ -38,7 +38,7 @@ def initialize_qc_csvs(tasks, output_path):
 
 def extend_metric_columns(base_columns, conditions):
     """
-    Extend base columns with accuracy and RT metrics for given conditions.
+    Extend base columns with acc and RT metrics for given conditions.
     
     Args:
         base_columns (list): Base columns (e.g., ['subject_id', 'session', 'run'])
@@ -56,7 +56,7 @@ def extend_metric_columns(base_columns, conditions):
 
 def extend_go_nogo_metric_columns(base_columns, conditions):
     """
-    Extend base columns with accuracy and RT metrics for go_nogo tasks.
+    Extend base columns with acc and RT metrics for go_nogo tasks.
     For nogo conditions: only acc and rt (no omission/commission rates)
     For go conditions: all metrics (acc, rt, omission_rate, commission_rate)
     
@@ -208,7 +208,7 @@ def get_task_columns(task_name, sample_df=None):
             if sample_df is not None:
                 spatial_conditions = [c for c in sample_df['task_switch'].unique() if pd.notna(c) and c != 'na']
                 cols = base_columns + create_stop_signal_dual_columns(spatial_conditions)
-                cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+                cols.extend(['parity_acc', 'magnitude_acc'])
                 return cols
             return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'cued_task_switching' in task_name:
@@ -222,7 +222,7 @@ def get_task_columns(task_name, sample_df=None):
                                     continue
                                 conditions.append(f"t{task_condition}_c{cue_condition}")
                 cols = base_columns + create_stop_signal_dual_columns(conditions)
-                cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+                cols.extend(['parity_acc', 'magnitude_acc'])
                 return cols
             return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'n_back' in task_name:
@@ -260,42 +260,42 @@ def get_task_columns(task_name, sample_df=None):
         elif 'directed_forgetting' in task_name and 'spatial_task_switching' in task_name or 'directedForgetting' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, DIRECTED_FORGETTING_CONDITIONS)
             cols = extend_metric_columns(base_columns, conditions)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'flanker' in task_name and 'spatial_task_switching' in task_name or 'flanker' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, FLANKER_CONDITIONS)
             cols = extend_metric_columns(base_columns, conditions)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'go_nogo' in task_name and 'spatial_task_switching' in task_name or 'go_nogo' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, GO_NOGO_CONDITIONS)
             cols = extend_go_nogo_metric_columns(base_columns, conditions)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'shape_matching' in task_name and 'spatial_task_switching' in task_name or 'shape_matching' in task_name and 'spatialTS' in task_name:
             conditions = create_dual_task_conditions(SPATIAL_TASK_SWITCHING_CONDITIONS, SHAPE_MATCHING_CONDITIONS)
             cols = extend_metric_columns(base_columns, conditions)
-            cols.extend(['same_accuracy', 'different_accuracy'])
+            cols.extend(['same_acc', 'different_acc'])
             return cols
         elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name or 'CuedTS' in task_name and 'spatialTS' in task_name:
             cols = extend_metric_columns(base_columns, SPATIAL_WITH_CUED_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'flanker' in task_name and 'cued_task_switching' in task_name or 'flanker' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, FLANKER_WITH_CUED_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'go_nogo' in task_name and 'cued_task_switching' in task_name or 'go_nogo' in task_name and 'CuedTS' in task_name:
             cols = extend_go_nogo_metric_columns(base_columns, GO_NOGO_WITH_CUED_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'shape_matching' in task_name and 'cued_task_switching' in task_name or 'shape_matching' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, SHAPE_MATCHING_WITH_CUED_CONDITIONS)
-            cols.extend(['same_accuracy', 'different_accuracy'])
+            cols.extend(['same_acc', 'different_acc'])
             return cols
         elif 'directed_forgetting' in task_name and 'cued_task_switching' in task_name or 'directedForgetting' in task_name and 'CuedTS' in task_name:
             cols = extend_metric_columns(base_columns, CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS)
-            cols.extend(['remember_accuracy', 'forget_accuracy'])
+            cols.extend(['remember_acc', 'forget_acc'])
             return cols
         elif 'go_nogo' in task_name and 'n_back' in task_name or 'go_nogo' in task_name and 'NBack' in task_name:
             return get_dual_n_back_columns(base_columns, sample_df, 'go_nogo_condition', gonogo=True)
@@ -307,20 +307,20 @@ def get_task_columns(task_name, sample_df=None):
             return get_dual_n_back_columns(base_columns, sample_df, 'directed_forgetting_condition')
         elif 'n_back' in task_name and 'cued_task_switching' in task_name or 'NBack' in task_name and 'CuedTS' in task_name:
             cols = get_dual_n_back_columns(base_columns, sample_df, cuedts=True)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'n_back' in task_name and 'spatial_task_switching' in task_name or 'NBack' in task_name and 'spatialTS' in task_name:
             cols = get_dual_n_back_columns(base_columns, sample_df, 'task_switch')
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
     else:
         if 'spatial_task_switching' in task_name or 'spatialTS' in task_name:
             cols = extend_metric_columns(base_columns, SPATIAL_TASK_SWITCHING_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'cued_task_switching' in task_name or 'cuedTS' in task_name:
             cols = extend_metric_columns(base_columns, CUED_TASK_SWITCHING_CONDITIONS)
-            cols.extend(['parity_accuracy', 'magnitude_accuracy'])
+            cols.extend(['parity_acc', 'magnitude_acc'])
             return cols
         elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             return extend_metric_columns(base_columns, DIRECTED_FORGETTING_CONDITIONS)
@@ -451,16 +451,16 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
     except FileNotFoundError:
         print(f"Warning: QC file {qc_file} not found")
 
-def calculate_accuracy(df, mask_acc):
+def calculate_acc(df, mask_acc):
     """
-    Calculate accuracy for given mask.
+    Calculate acc for given mask.
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
-        mask_acc (pd.Series): Boolean mask for accuracy calculation
+        mask_acc (pd.Series): Boolean mask for acc calculation
         
     Returns:
-        float: Accuracy (mean of correct_trial)
+        float: acc (mean of correct_trial)
     """
     return df[mask_acc]['correct_trial'].mean() if len(df[mask_acc]) > 0 else np.nan
 
@@ -509,7 +509,7 @@ def calculate_commission_rate(df, mask_commission, total_num_trials):
 
 def add_category_accuracies(df, column_name, label_to_metric_key, metrics, stopsignal=False, cuedts=False, gonogo=False):
     """
-    Add accuracy metrics aggregated over all trials for specified category labels.
+    Add acc metrics aggregated over all trials for specified category labels.
 
     Args:
         df (pd.DataFrame): Input dataframe
@@ -524,21 +524,21 @@ def add_category_accuracies(df, column_name, label_to_metric_key, metrics, stops
     for label, metric_key in label_to_metric_key.items():
         mask = series == label
         if stopsignal:
-            mask = mask & (df['SS_trial_type'] == 'go') #only calculating accuracy for go trials
+            mask = mask & (df['SS_trial_type'] == 'go') #only calculating acc for go trials
         if gonogo:
             mask = mask & (df['go_nogo_condition'] == 'go')
         if cuedts:
             metrics[metric_key] = (df[mask]['key_press'] == df[mask]['correct_response']).mean()
         else:
-            metrics[metric_key] = calculate_accuracy(df, mask)
+            metrics[metric_key] = calculate_acc(df, mask)
 
 def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     """
-    Calculate all basic metrics (accuracy, RT, omission rate, commission rate) for a condition.
+    Calculate all basic metrics (acc, RT, omission rate, commission rate) for a condition.
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
-        mask_acc (pd.Series): Boolean mask for accuracy calculation
+        mask_acc (pd.Series): Boolean mask for acc calculation
         cond_name (str): Condition name for metric keys
         metrics_dict (dict): Dictionary to store metrics
         
@@ -550,7 +550,7 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
     total_num_trials = len(df[mask_acc])
     
-    metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
+    metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
     metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
     metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
     metrics_dict[f'{cond_name}_commission_rate'] = calculate_commission_rate(df, mask_commission, total_num_trials)
@@ -563,7 +563,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
-        mask_acc (pd.Series): Boolean mask for accuracy calculation
+        mask_acc (pd.Series): Boolean mask for acc calculation
         cond_name (str): Condition name for metric keys
         metrics_dict (dict): Dictionary to store metrics
         
@@ -576,7 +576,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
     if is_nogo:
         # For nogo: only calculate RT for commission errors (incorrect responses)
         mask_rt = mask_acc & (df['key_press'] != -1)
-        metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
+        metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
         metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
         # Don't calculate omission_rate or commission_rate for nogo
     else:
@@ -586,7 +586,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
         mask_commission = mask_acc & (df['key_press'] != -1) & (df['correct_trial'] == 0)
         total_num_trials = len(df[mask_acc])
         
-        metrics_dict[f'{cond_name}_acc'] = calculate_accuracy(df, mask_acc)
+        metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
         metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
         metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
         metrics_dict[f'{cond_name}_commission_rate'] = calculate_commission_rate(df, mask_commission, total_num_trials)
@@ -666,21 +666,21 @@ def compute_cued_task_switching_metrics(
         add_category_accuracies(
             df,
             'cued_dimension',
-            {'remember': 'remember_accuracy', 'forget': 'forget_accuracy'},
+            {'remember': 'remember_acc', 'forget': 'forget_acc'},
             metrics
         )
     elif condition_type == 'shape_matching':
         add_category_accuracies(
             df,
             'task',
-            {'same': 'same_accuracy', 'different': 'different_accuracy'},
+            {'same': 'same_acc', 'different': 'different_acc'},
             metrics
         )
     elif condition_type == 'go_nogo':
         add_category_accuracies(
             df,
-            'go_nogo_condition',
-            {'go': 'go_accuracy', 'nogo': 'nogo_accuracy'},
+            'task',
+            {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
             metrics,
             gonogo=True
         )
@@ -688,7 +688,7 @@ def compute_cued_task_switching_metrics(
         add_category_accuracies(
             df,
             'task',
-            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
             metrics
         )
     return metrics
@@ -731,7 +731,7 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
         add_category_accuracies(
                 df,
                 'curr_task',
-                {'one_back': 'one_back_accuracy', 'two_back': 'two_back_accuracy'},
+                {'one_back': 'one_back_acc', 'two_back': 'two_back_acc'},
                 metrics
             )
         return metrics
@@ -775,7 +775,7 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'1-back': '1_back_accuracy', '2-back': '2_back_accuracy'},
+                {'1-back': '1_back_acc', '2-back': '2_back_acc'},
                 metrics
             )
     return metrics
@@ -842,7 +842,7 @@ def compute_cued_spatial_task_switching_metrics(df, condition_list):
     add_category_accuracies(
             df,
             'predictable_dimension',
-            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
             metrics
         )
     return metrics
@@ -1082,7 +1082,7 @@ def get_task_metrics(df, task_name):
 
 def calculate_metrics(df, conditions, condition_columns, is_dual_task, spatialts=False, shapematching=False, directedforgetting=False, gonogo=False):
     """
-    Calculate RT and accuracy metrics for any task.
+    Calculate RT and acc metrics for any task.
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
@@ -1124,28 +1124,28 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task, spatialts
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'the same': 'same_accuracy', 'different': 'different_accuracy'},
+                {'the same': 'same_acc', 'different': 'different_acc'},
                 metrics
             )
         elif spatialts and directedforgetting:
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'remember': 'remember_accuracy', 'forget': 'forget_accuracy'},
+                {'remember': 'remember_acc', 'forget': 'forget_acc'},
                 metrics
             )
         elif spatialts:
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+                {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
                 metrics
             )
         elif spatialts and gonogo:
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+                {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
                 metrics,
                 gonogo=True
             )
@@ -1163,7 +1163,7 @@ def calculate_metrics(df, conditions, condition_columns, is_dual_task, spatialts
             add_category_accuracies(
                 df,
                 'predictable_dimension',
-                {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+                {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
                 metrics
             )
 
@@ -1229,7 +1229,7 @@ def calculate_single_stop_signal_metrics(df):
     # Accuracies
     metrics['go_acc'] = df.loc[go_mask, 'correct_trial'].mean()
     
-    # Stop failure accuracy based on stimulus-response mapping from go trials
+    # Stop failure acc based on stimulus-response mapping from go trials
     go_trials = df[go_mask]
     stim_to_resp = (
         go_trials.groupby('stim')['correct_response']
@@ -1314,7 +1314,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_go_omission_rate'] = calculate_omission_rate(df, mask_omission, len(go_trials))
     metrics[f'{paired_cond}_go_commission_rate'] = calculate_commission_rate(df, mask_commission, len(go_trials))
     
-    # Stop failure accuracy based on stimulus-response mapping from go trials
+    # Stop failure acc based on stimulus-response mapping from go trials
     if stim_col is not None:
         if not go_trials.empty:
             stim_to_resp = (
@@ -1366,7 +1366,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
         add_category_accuracies(
             df,
             'task',
-            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
             metrics,
             stopsignal=True,
             cuedts=True
@@ -1375,7 +1375,7 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
         add_category_accuracies(
             df,
             'predictable_dimension',
-            {'parity': 'parity_accuracy', 'magnitude': 'magnitude_accuracy'},
+            {'parity': 'parity_acc', 'magnitude': 'magnitude_acc'},
             metrics,
             stopsignal=True
         )
