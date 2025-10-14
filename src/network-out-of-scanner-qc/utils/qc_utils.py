@@ -147,13 +147,14 @@ def create_dual_task_conditions(task1_conditions, task2_conditions, separator='_
     """
     return [f'{cond1}{separator}{cond2}' for cond1 in task1_conditions for cond2 in task2_conditions]
 
-def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=False):
+def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=False, include_nogo_metrics=False):
     """
     Create column names for stop signal dual tasks.
     
     Args:
         paired_conditions (list): List of paired task conditions
         include_nogo_commission (bool): Whether to include nogo_commission_rate column
+        include_nogo_metrics (bool): Whether to include nogo-specific metrics for go/nogo tasks
         
     Returns:
         list: Column names for stop signal dual task
@@ -174,6 +175,13 @@ def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=F
     if include_nogo_commission:
         conditions.append("nogo_commission_rate")
     
+    if include_nogo_metrics:
+        conditions.extend([
+            "nogo_go_accuracy",
+            "nogo_stop_success_min", 
+            "nogo_stop_success_max"
+        ])
+    
     return conditions
 
 def get_task_columns(task_name, sample_df=None):
@@ -192,7 +200,7 @@ def get_task_columns(task_name, sample_df=None):
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'go_nogo' in task_name:
             if sample_df is not None:
                 go_conditions = [c for c in sample_df['go_nogo_condition'].unique() if pd.notna(c) and c == 'go']
-                return base_columns + create_stop_signal_dual_columns(go_conditions, include_nogo_commission=True)
+                return base_columns + create_stop_signal_dual_columns(go_conditions, include_nogo_commission=True, include_nogo_metrics=True)
             return base_columns
         elif ('stop_signal' in task_name or 'stopSignal' in task_name) and 'shape_matching' in task_name:
             if sample_df is not None:
@@ -1003,6 +1011,24 @@ def get_task_metrics(df, task_name):
             total_nogo_trials = len(df[nogo_mask])
             metrics['nogo_commission_rate'] = num_nogo_commissions / total_nogo_trials if total_nogo_trials > 0 else np.nan
             
+            # Calculate nogo go accuracy (accuracy on go trials when nogo condition is present)
+            nogo_go_mask = (df['go_nogo_condition'] == 'nogo') & (df['SS_trial_type'] == 'go')
+            if len(df[nogo_go_mask]) > 0:
+                nogo_go_correct = (df[nogo_go_mask]['key_press'] == df[nogo_go_mask]['correct_response']).sum()
+                metrics['nogo_go_accuracy'] = nogo_go_correct / len(df[nogo_go_mask])
+            else:
+                metrics['nogo_go_accuracy'] = np.nan
+            
+            # Calculate nogo stop success min and max (across all nogo stop trials)
+            nogo_stop_mask = (df['go_nogo_condition'] == 'nogo') & (df['SS_trial_type'] == 'stop')
+            if len(df[nogo_stop_mask]) > 0:
+                nogo_stop_success = (df[nogo_stop_mask]['key_press'] == -1).astype(int)
+                metrics['nogo_stop_success_min'] = nogo_stop_success.min()
+                metrics['nogo_stop_success_max'] = nogo_stop_success.max()
+            else:
+                metrics['nogo_stop_success_min'] = np.nan
+                metrics['nogo_stop_success_max'] = np.nan
+            
             return metrics
         elif ('stop_signal' in task_name and 'shape_matching' in task_name) or ('stopSignal' in task_name and 'shape_matching' in task_name):
             paired_conditions = [c for c in df['shape_matching_condition'].unique() if pd.notna(c)]
@@ -1372,8 +1398,6 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask, stim_cols=stim_cols)
 
     if cuedts:
-        #debug: print number of trials where correct_response == key_press == correct_trial by the total number of trials
-        print(len(df[(df['correct_response'] == df['key_press']) == df['correct_trial']]) / len(df))
         add_category_accuracies(
             df,
             'task',
