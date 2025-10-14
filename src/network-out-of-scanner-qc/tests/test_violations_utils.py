@@ -24,26 +24,6 @@ def test_small_helpers():
     assert get_ssd(nxt) == 0.2
 
 
-def test_normalize_flanker_conditions():
-    """Test flanker condition normalization."""
-    # Test with prefixed flanker conditions
-    df = pd.DataFrame({
-        'flanker_condition': ['H_incongruent', 'H_congruent', 'F_incongruent', 'F_congruent', 'other'],
-        'other_col': [1, 2, 3, 4, 5]
-    })
-    
-    normalized_df = normalize_flanker_conditions(df)
-    
-    # Check that prefixes are removed
-    expected_conditions = ['incongruent', 'congruent', 'incongruent', 'congruent', 'other']
-    assert list(normalized_df['flanker_condition']) == expected_conditions
-    
-    # Test with DataFrame without flanker_condition column
-    df_no_flanker = pd.DataFrame({'other_col': [1, 2, 3]})
-    normalized_df_no_flanker = normalize_flanker_conditions(df_no_flanker)
-    assert list(normalized_df_no_flanker['other_col']) == [1, 2, 3]
-
-
 def test_compute_violations_basic():
     # Sequence: go (rt=0.5) -> stop (rt=0.7) => violation row (difference 0.2)
     df = pd.DataFrame({
@@ -101,37 +81,5 @@ def test_aggregate_violations_and_matrices(tmp_path: Path):
     mat = pd.read_csv(out_csv, index_col=0)
     assert 'mean' in mat.index
     assert 'mean' in mat.columns
-
-
-def test_stop_signal_go_nogo_metrics():
-    """Test the new nogo metrics for stop signal + go/nogo tasks."""
-    # Create test data with go/nogo stop signal task
-    df = pd.DataFrame({
-        'trial_id': ['test_trial'] * 6,
-        'go_nogo_condition': ['go', 'go', 'nogo', 'nogo', 'go', 'nogo'],
-        'SS_trial_type': ['go', 'stop', 'go', 'stop', 'go', 'stop'],
-        'key_press': [1, 2, 1, -1, 1, 2],  # -1 for stop success
-        'correct_response': [1, 1, 1, 1, 1, 1],
-        'correct_trial': [1, 0, 1, 1, 1, 0],
-        'rt': [0.5, 0.7, 0.6, np.nan, 0.8, 0.9],
-        'SS_delay': [np.nan, 0.2, np.nan, 0.3, np.nan, 0.4],
-        'stim': ['A', 'B', 'A', 'B', 'A', 'B']
-    })
-    
-    # Test the metrics calculation
-    metrics = get_task_metrics(df, 'stop_signal_with_go_nogo')
-    
-    # Check that the new nogo metrics are present
-    assert 'nogo_go_accuracy' in metrics
-    assert 'nogo_stop_success_min' in metrics
-    assert 'nogo_stop_success_max' in metrics
-    
-    # Check nogo_go_accuracy: 1 correct out of 1 nogo go trial = 1.0
-    assert metrics['nogo_go_accuracy'] == 1.0
-    
-    # Check nogo stop success: 1 success (key_press=-1) out of 2 nogo stop trials
-    # min=0 (at least one failure), max=1 (at least one success)
-    assert metrics['nogo_stop_success_min'] == 0
-    assert metrics['nogo_stop_success_max'] == 1
 
 

@@ -177,9 +177,8 @@ def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=F
     
     if include_nogo_metrics:
         conditions.extend([
-            "nogo_go_accuracy",
-            "nogo_stop_success_min", 
-            "nogo_stop_success_max"
+            "nogo_go_acc",
+            "nogo_stop_success_rate"
         ])
     
     return conditions
@@ -1011,23 +1010,21 @@ def get_task_metrics(df, task_name):
             total_nogo_trials = len(df[nogo_mask])
             metrics['nogo_commission_rate'] = num_nogo_commissions / total_nogo_trials if total_nogo_trials > 0 else np.nan
             
-            # Calculate nogo go accuracy (accuracy on go trials when nogo condition is present)
+            # Calculate nogo go acc (acc on go trials when nogo condition is present)
             nogo_go_mask = (df['go_nogo_condition'] == 'nogo') & (df['SS_trial_type'] == 'go')
             if len(df[nogo_go_mask]) > 0:
                 nogo_go_correct = (df[nogo_go_mask]['key_press'] == df[nogo_go_mask]['correct_response']).sum()
-                metrics['nogo_go_accuracy'] = nogo_go_correct / len(df[nogo_go_mask])
+                metrics['nogo_go_acc'] = nogo_go_correct / len(df[nogo_go_mask])
             else:
-                metrics['nogo_go_accuracy'] = np.nan
+                metrics['nogo_go_acc'] = np.nan
             
-            # Calculate nogo stop success min and max (across all nogo stop trials)
+            # Calculate nogo stop success rate (across all nogo stop trials)
             nogo_stop_mask = (df['go_nogo_condition'] == 'nogo') & (df['SS_trial_type'] == 'stop')
             if len(df[nogo_stop_mask]) > 0:
                 nogo_stop_success = (df[nogo_stop_mask]['key_press'] == -1).astype(int)
-                metrics['nogo_stop_success_min'] = nogo_stop_success.min()
-                metrics['nogo_stop_success_max'] = nogo_stop_success.max()
+                metrics['nogo_stop_success_rate'] = nogo_stop_success.mean()
             else:
-                metrics['nogo_stop_success_min'] = np.nan
-                metrics['nogo_stop_success_max'] = np.nan
+                metrics['nogo_stop_success_rate'] = np.nan
             
             return metrics
         elif ('stop_signal' in task_name and 'shape_matching' in task_name) or ('stopSignal' in task_name and 'shape_matching' in task_name):
