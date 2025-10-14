@@ -1194,10 +1194,10 @@ def normalize_flanker_conditions(df):
         df = df.copy()
         # Map h_incongruent, h_congruent, f_incongruent, f_congruent to incongruent, congruent
         flanker_mapping = {
-            'h_incongruent': 'incongruent',
-            'h_congruent': 'congruent', 
-            'f_incongruent': 'incongruent',
-            'f_congruent': 'congruent'
+            'H_incongruent': 'incongruent',
+            'H_congruent': 'congruent', 
+            'F_incongruent': 'incongruent',
+            'F_congruent': 'congruent'
         }
         df['flanker_condition'] = df['flanker_condition'].replace(flanker_mapping)
     return df
@@ -1372,7 +1372,8 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask, stim_cols=stim_cols)
 
     if cuedts:
-        print((df['correct_response'] == df['key_press']) == df['correct_trial'])
+        #debug: print number of trials where correct_response == key_press == correct_trial by the total number of stop trials
+        print(len(df[(df['correct_response'] == df['key_press']) == df['correct_trial']]) / len(df[stop_mask]))
         add_category_accuracies(
             df,
             'task',
