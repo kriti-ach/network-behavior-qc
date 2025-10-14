@@ -1372,8 +1372,8 @@ def calculate_dual_stop_signal_condition_metrics(df, paired_cond, paired_mask, s
     metrics[f'{paired_cond}_ssrt'] = compute_SSRT(df, condition_mask=paired_mask, stim_cols=stim_cols)
 
     if cuedts:
-        #debug: print number of trials where correct_response == key_press == correct_trial by the total number of stop trials
-        print(len(df[(df['correct_response'] == df['key_press']) == df['correct_trial']]) / len(df[stop_mask]))
+        #debug: print number of trials where correct_response == key_press == correct_trial by the total number of trials
+        print(len(df[(df['correct_response'] == df['key_press']) == df['correct_trial']]) / len(df))
         add_category_accuracies(
             df,
             'task',
