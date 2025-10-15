@@ -8,6 +8,7 @@ from utils.exclusion_utils import (
     check_n_back_exclusion_criteria,
     check_other_exclusion_criteria,
     check_exclusion_criteria,
+    suffix,
 )
 from utils.globals import (
     STOP_SUCCESS_ACC_LOW_THRESHOLD,
@@ -112,6 +113,24 @@ def test_check_exclusion_criteria_router():
     # Should have at least one row from several branches
     assert len(out[out['subject_id'] == 's01']) >= 1
 
+
+def test_suffix_basic_extraction():
+    # Extract everything after the prefix, preserving condition details
+    col = 'match_1.0back_tstay_cstay_acc'
+    pref = 'match_1.0back_'
+    assert suffix(col, pref) == 'tstay_cstay_acc'
+
+
+def test_suffix_prefix_not_found_returns_original():
+    col = 'mismatch_2.0back_incongruent_acc'
+    pref = 'not_present_'
+    assert suffix(col, pref) == col
+
+
+def test_suffix_complex_suffix_parts():
+    col = 'mismatch_3.0back_congruent_tstay_cswitch_omission_rate'
+    pref = 'mismatch_3.0back_'
+    assert suffix(col, pref) == 'congruent_tstay_cswitch_omission_rate'
 
 
 def test_nback_dual_ignores_non_nback_accuracy_and_checks_others():

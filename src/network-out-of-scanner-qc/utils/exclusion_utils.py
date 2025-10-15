@@ -60,7 +60,8 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
         subject_id = row['subject_id']
 
         # Get actual column names for each metric type
-        stop_success_cols = [col for col in task_csv.columns if 'stop_success' in col]
+        # Don't check nogo stop success
+        stop_success_cols = [col for col in task_csv.columns if 'stop_success' in col and 'nogo' not in col]
         go_rt_cols = [col for col in task_csv.columns if 'go_rt' in col]
         go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col]
         go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col]
@@ -144,19 +145,25 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
         subject_id = row['subject_id']
 
         # Combined condition at the top: mismatch < threshold AND match < threshold
-        exclusion_df = _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv)
+        exclusion_df = nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv)
 
         for level in [1, 2, 3]:
-            cols = _nback_get_columns(task_csv, level)
-            exclusion_df = _nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols)
-            exclusion_df = _nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols)
+            cols = nback_get_columns(task_csv, level)
+            exclusion_df = nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols)
+            exclusion_df = nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols)
 
     #sort by subject_id
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
 
-def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
+# Build maps by condition suffix to require same non-nback condition (e.g., flanker congruency, cuedTS state)
+def suffix(col: str, prefix: str) -> str:
+    # Everything after the prefix, preserves full condition detail
+    idx = col.find(prefix)
+    return col[idx + len(prefix):] if idx != -1 else col
+
+def nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
     """Flag N-back combined condition where both mismatch and match accuracies
     fall below their respective combined thresholds for a given level.
 
@@ -167,12 +174,6 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
         level_str = f"{level}.0back"
         mismatch_cols = [col for col in task_csv.columns if f'mismatch_{level_str}_' in col and 'acc' in col and 'nogo' not in col]
         match_cols = [col for col in task_csv.columns if f'match_{level_str}_' in col and 'acc' in col and 'mismatch' not in col and 'nogo' not in col]
-
-        # Build maps by condition suffix to require same non-nback condition (e.g., flanker congruency, cuedTS state)
-        def suffix(col: str, prefix: str) -> str:
-            # Everything after the prefix, preserves full condition detail
-            idx = col.find(prefix)
-            return col[idx + len(prefix):] if idx != -1 else col
 
         mismatch_map = {suffix(c, f"mismatch_{level_str}_"): c for c in mismatch_cols}
         match_map = {suffix(c, f"match_{level_str}_"): c for c in match_cols}
@@ -193,7 +194,7 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
                     )
     return exclusion_df
 
-def _nback_get_columns(task_csv, level):
+def nback_get_columns(task_csv, level):
     level_str = f"{level}.0back"
     match_acc = [col for col in task_csv.columns if f'match_{level_str}' in col and 'acc' in col and 'mismatch' not in col and 'nogo' not in col]
     mismatch_acc = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'acc' in col and 'nogo' not in col]
@@ -204,7 +205,7 @@ def _nback_get_columns(task_csv, level):
         'omission_rate': omiss,
     }
 
-def _nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols):
+def nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols):
     # Flag mismatch accuracy below threshold (use full column name)
     for mismatch_col in cols['mismatch_acc']:
         val = row[mismatch_col]
@@ -221,7 +222,7 @@ def _nback_flag_independent_accuracy(exclusion_df, subject_id, row, level, cols)
             )
     return exclusion_df
 
-def _nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols):
+def nback_flag_omission_rates(exclusion_df, subject_id, row, level, cols):
     for omiss_col in cols['omission_rate']:
         val = row[omiss_col]
         if compare_to_threshold(omiss_col, val, OMISSION_RATE_THRESHOLD):
