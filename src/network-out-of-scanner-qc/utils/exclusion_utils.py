@@ -127,8 +127,8 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 if go_prefix == nogo_prefix:
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
-                    # If N-back is in the task, skip go_acc here (N-back owns go-related accuracy)
-                    if 'n_back' not in task_name:
+                    # Check go accuracy threshold only if this is a go_nogo single task 
+                    if task_name == "go_nogo_single_task_network":
                         if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO):
                             exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
                     if compare_to_threshold('nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):

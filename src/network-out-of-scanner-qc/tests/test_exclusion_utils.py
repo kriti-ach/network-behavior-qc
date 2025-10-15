@@ -113,3 +113,66 @@ def test_check_exclusion_criteria_router():
     assert len(out[out['subject_id'] == 's01']) >= 1
 
 
+
+def test_nback_dual_ignores_non_nback_accuracy_and_checks_others():
+    # Task includes n_back; accuracy should be driven by n-back only, but other metrics (e.g., omission) still apply
+    task_csv = pd.DataFrame({
+        'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
+        'go_rt': [GO_RT_THRESHOLD + 10, np.nan, np.nan, np.nan, np.nan],
+        'go_acc': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be ignored due to n_back
+        'go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be checked
+        'mismatch_1.0back_acc_cstay': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
+        'match_1.0back_acc_cstay': [ACC_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
+    })
+    exclusion_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+    out = check_exclusion_criteria('stop_signal_with_n_back_and_flanker', task_csv, exclusion_df)
+    # Should include nback accuracy flags and omission_rate, but not generic go_acc
+    assert (out['metric'].str.contains('mismatch_1.0back_acc').any())
+    assert (out['metric'].str.contains('match_1.0back_acc').any())
+    assert (out['metric'] == 'go_omission_rate').any()
+    assert not (out['metric'] == 'go_acc').any()
+
+
+def test_gng_nback_prioritization_nogo_and_nback_go_only():
+    # In n_back + go_nogo: prioritize nogo_acc for nogo, and nback thresholds for go condition
+    task_csv = pd.DataFrame({
+        'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
+        'tstay_cstay_go_acc': [GO_ACC_THRESHOLD_GO_NOGO - 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be ignored
+        'tstay_cstay_nogo_acc': [NOGO_ACC_THRESHOLD_GO_NOGO - 0.1, np.nan, np.nan, np.nan, np.nan],  # Should be flagged
+        # N-back columns (note: ensure no 'nogo' in these column names to be considered by nback checks)
+        'mismatch_1.0back_acc_cstay': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
+        'match_1.0back_acc_cstay': [ACC_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
+        # A column that looks like nback but includes 'nogo' should be ignored by nback logic
+        'mismatch_1.0back_acc_cstay_nogo': [ACC_THRESHOLD - 0.5, np.nan, np.nan, np.nan, np.nan],
+    })
+    exclusion_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+    out = check_exclusion_criteria('go_nogo_with_n_back', task_csv, exclusion_df)
+    # nogo_acc flagged
+    assert (out['metric'] == 'tstay_cstay_nogo_acc').any()
+    # go_acc not flagged because n_back owns go accuracy
+    assert not (out['metric'] == 'tstay_cstay_go_acc').any()
+    # nback match/mismatch flagged
+    assert (out['metric'].str.contains('mismatch_1.0back_acc').any())
+    assert (out['metric'].str.contains('match_1.0back_acc').any())
+    # The fake nback column with 'nogo' in name should not produce a separate flag from nback logic
+    assert not (out['metric'] == 'mismatch_1.0back_acc_cstay_nogo').any()
+
+
+def test_other_exclusion_skips_accuracy_when_nback_task():
+    # When n_back in task, generic accuracy in other_exclusion should be skipped, but omission should still be processed
+    task_csv = pd.DataFrame({
+        'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
+        'some_acc': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
+        'some_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],
+        'mismatch_1.0back_acc_cstay': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
+        'match_1.0back_acc_cstay': [ACC_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
+    })
+    exclusion_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+    out = check_exclusion_criteria('n_back_with_flanker', task_csv, exclusion_df)
+    # some_acc should be ignored in other_exclusion for nback tasks
+    assert not (out['metric'] == 'some_acc').any()
+    # omission rate still flagged
+    assert (out['metric'] == 'some_omission_rate').any()
+    # nback accuracies flagged
+    assert (out['metric'].str.contains('mismatch_1.0back_acc').any())
+    assert (out['metric'].str.contains('match_1.0back_acc').any())
