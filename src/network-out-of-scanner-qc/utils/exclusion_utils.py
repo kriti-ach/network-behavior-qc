@@ -181,6 +181,8 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
         for cond_suffix in common_suffixes:
             mismatch_col = mismatch_map[cond_suffix]
             match_col = match_map[cond_suffix]
+            print(f'mismatch_col: {mismatch_col}')
+            print(f'match_col: {match_col}')
             mismatch_val = row[mismatch_col]
             match_val = row[match_col]
             if pd.notna(mismatch_val) and pd.notna(match_val):
