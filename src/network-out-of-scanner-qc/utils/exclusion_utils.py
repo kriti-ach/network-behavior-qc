@@ -86,11 +86,12 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
             if compare_to_threshold('go_rt', value, GO_RT_THRESHOLD):
                 exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, GO_RT_THRESHOLD)
 
-        # Check go_acc columns
-        for col_name in go_acc_cols:
-            value = row[col_name]
-            if compare_to_threshold('go_acc', value, ACC_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD)
+        # Check go_acc columns unless this is an N-back dual (N-back accuracy rules should own accuracy)
+        if 'n_back' not in task_name:
+            for col_name in go_acc_cols:
+                value = row[col_name]
+                if compare_to_threshold('go_acc', value, ACC_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD)
 
         # Check go_omission_rate columns
         for col_name in go_omission_rate_cols:
@@ -126,12 +127,12 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 if go_prefix == nogo_prefix:
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
-                    if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO):
-                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
+                    # If N-back is in the task, skip go_acc here (N-back owns go-related accuracy)
+                    if 'n_back' not in task_name:
+                        if compare_to_threshold('go_acc', go_acc_value, GO_ACC_THRESHOLD_GO_NOGO):
+                            exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_go, go_acc_value, GO_ACC_THRESHOLD_GO_NOGO)
                     if compare_to_threshold('nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO)
-                    if np.mean([go_acc_value, nogo_acc_value]) < ACC_THRESHOLD:
-                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'mean_go_and_nogo_acc', np.mean([go_acc_value, nogo_acc_value]), ACC_THRESHOLD)
 
         for col_name in go_omission_rate_cols:
             value = row[col_name]
@@ -175,8 +176,8 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
         (3, MISMATCH_3_BACK_THRESHOLD_COMBINED, MATCH_3_BACK_THRESHOLD_COMBINED),
     ]:
         level_str = f"{level}.0back"
-        mismatch_cols = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'acc' in col]
-        match_cols = [col for col in task_csv.columns if f'match_{level_str}' in col and 'acc' in col and 'mismatch' not in col]
+        mismatch_cols = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'acc' in col and 'nogo' not in col]
+        match_cols = [col for col in task_csv.columns if f'match_{level_str}' in col and 'acc' in col and 'mismatch' not in col and 'nogo' not in col]
         if mismatch_cols and match_cols:
             mismatch_val = row[mismatch_cols[0]]
             match_val = row[match_cols[0]]
@@ -192,8 +193,8 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
 
 def _nback_get_columns(task_csv, level):
     level_str = f"{level}.0back"
-    match_acc = [col for col in task_csv.columns if f'match_{level_str}' in col and 'acc' in col and 'mismatch' not in col]
-    mismatch_acc = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'acc' in col]
+    match_acc = [col for col in task_csv.columns if f'match_{level_str}' in col and 'acc' in col and 'mismatch' not in col and 'nogo' not in col]
+    mismatch_acc = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'acc' in col and 'nogo' not in col]
     match_omiss = [col for col in task_csv.columns if f'match_{level_str}' in col and 'omission_rate' in col and 'mismatch' not in col]
     mismatch_omiss = [col for col in task_csv.columns if f'mismatch_{level_str}' in col and 'omission_rate' in col]
     return {
@@ -243,9 +244,10 @@ def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
             continue
         subject_id = row['subject_id']
         for col_name in task_csv.columns:
-            acc_cols = [col for col in task_csv.columns if 'acc' in col]
+            acc_cols = [col for col in task_csv.columns if 'acc' in col and 'nogo' not in col]
             omission_rate_cols = [col for col in task_csv.columns if 'omission_rate' in col]
-            if col_name in acc_cols:
+            # If this task includes N-back, let N-back rules handle accuracy; still apply other tasks' omission rules
+            if ('n_back' not in task_name) and (col_name in acc_cols):
                 value = row[col_name]
                 if compare_to_threshold(col_name, value, ACC_THRESHOLD):
                     exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD)
