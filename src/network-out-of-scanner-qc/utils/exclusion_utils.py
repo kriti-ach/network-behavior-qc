@@ -18,6 +18,7 @@ from utils.globals import (
     MATCH_COMBINED_THRESHOLD,
     ACC_THRESHOLD,
     OMISSION_RATE_THRESHOLD,
+    NOGO_STOP_SUCCESS_MIN,
     SUMMARY_ROWS
 )
 from utils.qc_utils import sort_subject_ids
@@ -61,7 +62,7 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
 
         # Get actual column names for each metric type
         # Don't check nogo stop success
-        stop_success_cols = [col for col in task_csv.columns if 'stop_success' in col and 'nogo' not in col]
+        stop_success_cols = [col for col in task_csv.columns if 'stop_success' in col]
         go_rt_cols = [col for col in task_csv.columns if 'go_rt' in col]
         go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col]
         go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col]
@@ -69,10 +70,14 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
         # Check stop_success specifically for low and high thresholds
         for col_name in stop_success_cols:
             value = row[col_name]
-            if compare_to_threshold('stop_success_low', value, STOP_SUCCESS_ACC_LOW_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_LOW_THRESHOLD)
-            if compare_to_threshold('stop_success_high', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_HIGH_THRESHOLD)
+            if 'nogo' in col_name:
+                if compare_to_threshold('stop_success_low', value, NOGO_STOP_SUCCESS_MIN):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, NOGO_STOP_SUCCESS_MIN)
+            else:
+                if compare_to_threshold('stop_success_low', value, STOP_SUCCESS_ACC_LOW_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_LOW_THRESHOLD)
+                if compare_to_threshold('stop_success_high', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_HIGH_THRESHOLD)
 
         # Check go_rt columns
         for col_name in go_rt_cols:
