@@ -181,17 +181,15 @@ def _nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
         for cond_suffix in common_suffixes:
             mismatch_col = mismatch_map[cond_suffix]
             match_col = match_map[cond_suffix]
-            print(f'mismatch_col: {mismatch_col}')
-            print(f'match_col: {match_col}')
             mismatch_val = row[mismatch_col]
             match_val = row[match_col]
             if pd.notna(mismatch_val) and pd.notna(match_val):
                 if (mismatch_val < MISMATCH_COMBINED_THRESHOLD) and (match_val < MATCH_COMBINED_THRESHOLD):
                     exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, mismatch_col, mismatch_val, MISMATCH_COMBINED_THRESHOLD
+                        exclusion_df, subject_id, f'{mismatch_col}_combined', mismatch_val, MISMATCH_COMBINED_THRESHOLD
                     )
                     exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, match_col, match_val, MATCH_COMBINED_THRESHOLD
+                        exclusion_df, subject_id, f'{match_col}_combined', match_val, MATCH_COMBINED_THRESHOLD
                     )
     return exclusion_df
 
