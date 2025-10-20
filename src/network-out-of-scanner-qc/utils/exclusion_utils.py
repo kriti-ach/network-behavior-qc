@@ -160,19 +160,14 @@ def check_collapsed_stop_signal_metrics(exclusion_df, subject_id, row, task_csv,
         
         # Find common conditions between match and mismatch
         common_conditions = set(match_groups.keys()) & set(mismatch_groups.keys())
-        print(f"common_conditions: {common_conditions}")
-        print(f"match_groups: {match_groups}")
-        print(f"mismatch_groups: {mismatch_groups}")
         
         for condition in common_conditions:
             # Collapse match metrics across load levels for this condition
             collapsed_match_value = collapse_metrics_across_loads(row, match_groups[condition], f'match_{metric_type}')
-            print(f'metric_type: {metric_type}')
-            print(f"collapsed_match_value: {collapsed_match_value}")
+
             # Collapse mismatch metrics across load levels for this condition  
             collapsed_mismatch_value = collapse_metrics_across_loads(row, mismatch_groups[condition], f'mismatch_{metric_type}')
-            print(f'metric_type: {metric_type}')
-            print(f"collapsed_mismatch_value: {collapsed_mismatch_value}")
+
             # Apply thresholds based on metric type
             if metric_type == 'stop_success':
                 if collapsed_match_value is not None:
