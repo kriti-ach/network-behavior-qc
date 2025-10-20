@@ -1044,6 +1044,7 @@ def get_task_metrics(df, task_name):
             paired_conditions = []
             for n_back_condition in df['n_back_condition'].unique():
                 if pd.notna(n_back_condition):
+                    paired_conditions.append(f"{n_back_condition}_collapsed")
                     for delay in df['delay'].unique():
                         if pd.notna(delay):
                             paired_conditions.append(f"{n_back_condition}_{delay}back")
@@ -1433,7 +1434,9 @@ def parse_dual_task_condition(paired_cond, paired_task_col):
         return lambda df: df[paired_task_col] == paired_cond, None
     else:
         # For combined conditions like n-back, parse the condition name
-        if 'back' in paired_cond:
+        if 'collapsed' in paired_cond and 'back' in paired_cond:
+            return lambda df: (df['n_back_condition'] == paired_cond.replace('_collapsed', '')), None
+        elif 'back' in paired_cond:
             # Parse n-back condition like "0_1back" -> n_back_condition="0", delay="1"
             parts = paired_cond.split('_')
             if len(parts) >= 2:

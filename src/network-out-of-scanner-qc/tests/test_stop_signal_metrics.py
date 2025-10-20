@@ -121,9 +121,8 @@ class TestStopSignalMetrics:
         assert args is None
         
         # Test invalid condition
-        mask_func, args = parse_dual_task_condition('invalid', None)
-        assert mask_func is None
-        assert args is None
+        result = parse_dual_task_condition('invalid', None)
+        assert result is None
         
     def test_get_go_trials_rt(self):
         """Test go trial RT extraction."""
