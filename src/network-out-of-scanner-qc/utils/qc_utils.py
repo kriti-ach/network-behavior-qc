@@ -235,6 +235,7 @@ def get_task_columns(task_name, sample_df=None):
                 conditions = []
                 for n_back_condition in sample_df['n_back_condition'].unique():
                     if pd.notna(n_back_condition):
+                        conditions.append(f"{n_back_condition}_collapsed")
                         for delay in sample_df['delay'].unique():
                             if pd.notna(delay):
                                 condition_name = f"{n_back_condition}_{delay}back"
@@ -738,7 +739,8 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
             if pd.isna(n_back_condition):
                 continue
             for delay in df['delay'].unique():
-                for paired_condition in paired_conditions:
+                if paired_conditions is not None:
+                    for paired_condition in paired_conditions:
                     col_prefix = f"{n_back_condition}_{delay}back_{paired_condition}"
                     mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col].str.lower() == paired_condition.lower())
                     calculate_go_nogo_metrics(df, mask_acc, col_prefix, metrics)
@@ -762,13 +764,14 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
             for delay in df['delay'].unique():
                 if pd.isna(delay):
                     continue
-                for paired_cond in paired_conditions:
-                    if shapematching:
-                        condition = f"n_back_{n_back_condition}_{delay}back_shape_matching_{paired_cond.lower()}"
-                    else:
-                        condition = f"{n_back_condition}_{delay}back_{paired_cond.lower()}"
-                    mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col].str.lower() == paired_cond.lower())
-                    calculate_basic_metrics(df, mask_acc, condition, metrics)
+                if paired_conditions is not None:
+                    for paired_cond in paired_conditions:
+                        if shapematching:
+                            condition = f"n_back_{n_back_condition}_{delay}back_shape_matching_{paired_cond.lower()}"
+                        else:
+                            condition = f"{n_back_condition}_{delay}back_{paired_cond.lower()}"
+                        mask_acc = (df['n_back_condition'].str.lower() == n_back_condition) & (df['delay'] == delay) & (df[paired_task_col].str.lower() == paired_cond.lower())
+                        calculate_basic_metrics(df, mask_acc, condition, metrics)
         if spatialts:
             add_category_accuracies(
                 df,
@@ -1434,8 +1437,11 @@ def parse_dual_task_condition(paired_cond, paired_task_col):
         return lambda df: df[paired_task_col] == paired_cond, None
     else:
         # For combined conditions like n-back, parse the condition name
-        if 'collapsed' in paired_cond and 'back' in paired_cond:
-            return lambda df: (df['n_back_condition'] == paired_cond.replace('_collapsed', '')), None
+        if 'collapsed' in paired_cond:
+            # Handle collapsed conditions like "match_collapsed" or "mismatch_collapsed"
+            # These collapse across all delays for a given n_back_condition
+            n_back_condition = paired_cond.replace('_collapsed', '')
+            return lambda df: (df['n_back_condition'] == n_back_condition), None
         elif 'back' in paired_cond:
             # Parse n-back condition like "0_1back" -> n_back_condition="0", delay="1"
             parts = paired_cond.split('_')
@@ -1480,20 +1486,21 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
         # Dual stop signal task
         metrics = {}
         
-        for paired_cond in paired_conditions:
-            # Parse condition and create mask
-            mask_func, args = parse_dual_task_condition(paired_cond, paired_task_col)
-            if mask_func is None:
-                print(f'  WARNING: Could not parse condition "{paired_cond}"')
-                continue
+        if paired_conditions is not None:
+            for paired_cond in paired_conditions:
+                # Parse condition and create mask
+                mask_func, args = parse_dual_task_condition(paired_cond, paired_task_col)
+                if mask_func is None:
+                    print(f'  WARNING: Could not parse condition "{paired_cond}"')
+                    continue
+                    
+                paired_mask = mask_func(df)
                 
-            paired_mask = mask_func(df)
-            
-            # Calculate metrics for this condition
-            condition_metrics = calculate_dual_stop_signal_condition_metrics(
-                df, paired_cond, paired_mask, stim_col, stim_cols, cuedts, spatialts
-            )
-            metrics.update(condition_metrics)
+                # Calculate metrics for this condition
+                condition_metrics = calculate_dual_stop_signal_condition_metrics(
+                    df, paired_cond, paired_mask, stim_col, stim_cols, cuedts, spatialts
+                )
+                metrics.update(condition_metrics)
         
         # Add SSD stats (calculated across all stop trials)
         ssd_stats = calculate_stop_signal_ssd_stats(df)
