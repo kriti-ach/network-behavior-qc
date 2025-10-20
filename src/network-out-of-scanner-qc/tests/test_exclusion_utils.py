@@ -136,20 +136,20 @@ def test_suffix_complex_suffix_parts():
 
 
 def test_nback_dual_ignores_non_nback_accuracy_and_checks_others():
-    # Task includes n_back; accuracy should be driven by n-back only, but other metrics (e.g., omission) still apply
+    # Task includes n_back; accuracy should be driven by n-back only, but other metrics (e.g., omission) still apply                                                                                              
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
         'go_rt': [GO_RT_THRESHOLD + 10, np.nan, np.nan, np.nan, np.nan],
-        'go_acc': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be ignored due to n_back
-        'go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be checked
+        'go_acc': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be ignored due to n_back                                                                                                       
+        'go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be checked                                                                                                 
         'mismatch_1.0back_acc_cstay': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
         'match_1.0back_acc_cstay': [ACC_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
     })
     exclusion_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
-    out = check_exclusion_criteria('stop_signal_with_n_back_and_flanker', task_csv, exclusion_df)
-    # Should include collapsed nback accuracy flags and omission_rate, but not generic go_acc
-    assert (out['metric'].str.contains('collapsed_mismatch_acc_cstay').any())
-    assert (out['metric'].str.contains('collapsed_match_acc_cstay').any())
+    out = check_exclusion_criteria('n_back_with_flanker', task_csv, exclusion_df)
+    # Should include nback accuracy flags and omission_rate, but not generic go_acc
+    assert (out['metric'].str.contains('mismatch_1.0back_acc').any())
+    assert (out['metric'].str.contains('match_1.0back_acc').any())
     assert (out['metric'] == 'go_omission_rate').any()
     assert not (out['metric'] == 'go_acc').any()
 
@@ -199,3 +199,4 @@ def test_prefix_basic_extraction():
     col = 'stop_fail_rt_tstay_cstay'
     pref = 'tstay_cstay'
     assert prefix(col, pref) == 'stop_fail_rt_'
+
