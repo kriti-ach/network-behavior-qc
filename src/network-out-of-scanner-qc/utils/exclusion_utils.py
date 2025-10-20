@@ -82,15 +82,12 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
             continue
         subject_id = row['subject_id']
 
-        # Check if this is a stop+nback task (collapse across load levels)
-        is_stop_nback = 'stop_signal' in task_name and 'n_back' in task_name
-
         # Get actual column names for each metric type
         stop_success_cols = [col for col in task_csv.columns if 'stop_success' in col]
-        go_rt_cols = [col for col in task_csv.columns if 'go_rt' in col]
-        go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col]
-        go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col]
-        stop_fail_rt_cols = [col for col in task_csv.columns if 'stop_fail_rt' in col]
+        go_rt_cols = [col for col in task_csv.columns if 'go_rt' in col and 'collapsed' not in col]
+        go_acc_cols = [col for col in task_csv.columns if 'go_acc' in col and 'collapsed' not in col]
+        go_omission_rate_cols = [col for col in task_csv.columns if 'go_omission_rate' in col and 'collapsed' not in col]
+        stop_fail_rt_cols = [col for col in task_csv.columns if 'stop_fail_rt' in col and 'collapsed' not in col]
             # Check stop_success specifically for low and high thresholds
         for col_name in stop_success_cols:
             value = row[col_name]
@@ -144,9 +141,9 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
         subject_id = row['subject_id']
 
         # Get actual column names for each metric type
-        go_acc_cols = [col for col in task_csv.columns if 'go' in col and 'acc' in col and 'nogo' not in col]
-        nogo_acc_cols = [col for col in task_csv.columns if 'nogo' in col and 'acc' in col]
-        go_omission_rate_cols = [col for col in task_csv.columns if 'go' in col and 'omission_rate' in col and 'nogo' not in col]
+        go_acc_cols = [col for col in task_csv.columns if 'go' in col and 'acc' in col and 'nogo' not in col and 'collapsed' not in col]
+        nogo_acc_cols = [col for col in task_csv.columns if 'nogo' in col and 'acc' in col and 'collapsed' not in col]
+        go_omission_rate_cols = [col for col in task_csv.columns if 'go' in col and 'omission_rate' in col and 'nogo' not in col and 'collapsed' not in col]
 
         # If go accuracy < threshold AND nogo accuracy < threshold, then exclude
         # Only check when the prefix (before go_acc/nogo_acc) matches
@@ -190,55 +187,6 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
     #sort by subject_id
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
-    return exclusion_df
-
-def nback_flag_collapsed_accuracy(exclusion_df, subject_id, row, task_csv):
-    """Flag N-back collapsed accuracy for stop+nback tasks.
-    
-    For stop+nback tasks, collapse across all load levels (1, 2, 3) and check:
-    - Combined mismatch accuracy across all loads < 70% AND match accuracy across all loads < 55%
-    - Individual mismatch accuracy across all loads < 70%
-    - Individual match accuracy across all loads < 55%
-    """
-    # Get all mismatch and match accuracy columns across all loads
-    all_mismatch_cols = []
-    all_match_cols = []
-    
-    for load in [1, 2, 3]:
-        load_str = f"{load}.0back"
-        mismatch_cols = [col for col in task_csv.columns if f'mismatch_{load_str}_' in col and 'acc' in col and 'nogo' not in col and 'stop_fail' not in col]
-        match_cols = [col for col in task_csv.columns if f'match_{load_str}_' in col and 'acc' in col and 'mismatch' not in col and 'nogo' not in col and 'stop_fail' not in col]
-        all_mismatch_cols.extend(mismatch_cols)
-        all_match_cols.extend(match_cols)
-    
-    # Calculate collapsed accuracies (mean across all loads)
-    mismatch_values = [row[col] for col in all_mismatch_cols if pd.notna(row[col])]
-    match_values = [row[col] for col in all_match_cols if pd.notna(row[col])]
-    
-    if len(mismatch_values) > 0 and len(match_values) > 0:
-        collapsed_mismatch_acc = np.mean(mismatch_values)
-        collapsed_match_acc = np.mean(match_values)
-        
-        # Check combined condition: both below thresholds
-        if (collapsed_mismatch_acc < MISMATCH_COMBINED_THRESHOLD) and (collapsed_match_acc < MATCH_COMBINED_THRESHOLD):
-            exclusion_df = append_exclusion_row(
-                exclusion_df, subject_id, 'collapsed_mismatch_acc_combined', collapsed_mismatch_acc, MISMATCH_COMBINED_THRESHOLD
-            )
-            exclusion_df = append_exclusion_row(
-                exclusion_df, subject_id, 'collapsed_match_acc_combined', collapsed_match_acc, MATCH_COMBINED_THRESHOLD
-            )
-        
-        # Check individual conditions
-        if collapsed_mismatch_acc < MISMATCH_THRESHOLD:
-            exclusion_df = append_exclusion_row(
-                exclusion_df, subject_id, 'collapsed_mismatch_acc', collapsed_mismatch_acc, MISMATCH_THRESHOLD
-            )
-        
-        if collapsed_match_acc < MATCH_THRESHOLD:
-            exclusion_df = append_exclusion_row(
-                exclusion_df, subject_id, 'collapsed_match_acc', collapsed_match_acc, MATCH_THRESHOLD
-            )
-    
     return exclusion_df
 
 def nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
