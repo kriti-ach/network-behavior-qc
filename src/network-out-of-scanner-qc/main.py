@@ -22,6 +22,7 @@ from utils.exclusion_utils import check_exclusion_criteria
 
 folder_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner")
 output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_qc")
+flags_output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_flags")
 exclusions_output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_exclusions")
 violations_output_path = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_violations")
 
@@ -66,7 +67,9 @@ for task in SINGLE_TASKS_OUT_OF_SCANNER + DUAL_TASKS_OUT_OF_SCANNER:
         correct_columns(output_path / f"{task}_qc.csv")
     task_csv = pd.read_csv(output_path / f"{task}_qc.csv")
     exclusion_df = check_exclusion_criteria(task, task_csv, exclusion_df)
-    exclusion_df.to_csv(exclusions_output_path / f"flagged_data_{task}.csv", index=False)
+    exclusion_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)
+    #exclusion_df = remove_some_flags(task, exclusion_df)
+    exclusion_df.to_csv(exclusions_output_path / f"excluded_data_{task}.csv", index=False)
         
 violations_df.to_csv(violations_output_path / 'violations_data.csv', index=False)
 aggregated_violations_df = aggregate_violations(violations_df)

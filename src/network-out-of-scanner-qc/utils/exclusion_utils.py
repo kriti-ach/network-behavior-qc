@@ -94,9 +94,9 @@ def get_match_mismatch_columns_by_condition(task_csv, condition_type, metric_typ
     for load in [1, 2, 3]:
         load_str = f"{load}.0back"
         if condition_type == 'match':
-            cols = [col for col in task_csv.columns if f'match_{load_str}_' in col and metric_type in col and 'mismatch' not in col and 'stop_fail' not in col]
+            cols = [col for col in task_csv.columns if f'match_{load_str}_' in col and metric_type in col and 'mismatch' not in col]
         else:  # mismatch
-            cols = [col for col in task_csv.columns if f'mismatch_{load_str}_' in col and metric_type in col and 'stop_fail' not in col]
+            cols = [col for col in task_csv.columns if f'mismatch_{load_str}_' in col and metric_type in col]
         # Group by condition suffix (e.g., congruent, incongruent)
         for col in cols:
             if condition_type == 'match':
