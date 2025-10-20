@@ -213,6 +213,8 @@ def check_collapsed_stop_signal_metrics(exclusion_df, subject_id, row, task_csv,
                     match_go_rt_groups = get_match_mismatch_columns_by_condition(task_csv, 'match', 'go_rt')
                     if condition in match_go_rt_groups:
                         collapsed_match_go_rt = collapse_metrics_across_loads(row, match_go_rt_groups[condition], 'match_go_rt')
+                        print(f'collapsed_stop_fail_rt: {collapsed_match_value}')
+                        print(f'collapsed_match_go_rt: {collapsed_match_go_rt}')
                         if collapsed_match_go_rt is not None and collapsed_match_value > collapsed_match_go_rt:
                             exclusion_df = append_exclusion_row(exclusion_df, subject_id, f'collapsed_match_{condition}_stop_fail_rt_greater_than_go_rt', collapsed_match_value, collapsed_match_go_rt)
                     
