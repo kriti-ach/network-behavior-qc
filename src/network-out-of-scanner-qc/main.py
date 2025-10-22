@@ -67,8 +67,18 @@ for task in SINGLE_TASKS_OUT_OF_SCANNER + DUAL_TASKS_OUT_OF_SCANNER:
         correct_columns(output_path / f"{task}_qc.csv")
     task_csv = pd.read_csv(output_path / f"{task}_qc.csv")
     exclusion_df = check_exclusion_criteria(task, task_csv, exclusion_df)
-    exclusion_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)
+    
+    # Create a copy for flagged data (flags that will be removed)
+    flagged_df = exclusion_df.copy()
+    
+    # Remove some flags for exclusion data
     exclusion_df = remove_some_flags_for_exclusion(task, exclusion_df)
+    
+    # Flagged data contains only the flags that were removed (original - filtered)
+    flagged_df = flagged_df[~flagged_df.index.isin(exclusion_df.index)]
+    
+    # Save both datasets
+    flagged_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)
     exclusion_df.to_csv(exclusions_output_path / f"excluded_data_{task}.csv", index=False)
         
 violations_df.to_csv(violations_output_path / 'violations_data.csv', index=False)
