@@ -107,7 +107,9 @@ if cfg.is_fmri:
                     metrics = get_task_metrics(df, task_name)
                     if (not cfg.is_fmri) and 'stop_signal' in task_name:
                         violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
-                    update_qc_csv(output_path, task_name, subject_id, metrics)
+                    # Session for fmri from ses-* directory name
+                    session = Path(ses_dir).name if cfg.is_fmri else None
+                    update_qc_csv(output_path, task_name, subject_id, metrics, session=session)
                 except Exception as e:
                     print(f"Error processing {task_name} for subject {subject_id}: {str(e)}")
 else:
@@ -130,7 +132,7 @@ else:
                         metrics = get_task_metrics(df, task_name)
                         if (not cfg.is_fmri) and 'stop_signal' in task_name:
                             violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
-                        update_qc_csv(output_path, task_name, subject_id, metrics)
+                        update_qc_csv(output_path, task_name, subject_id, metrics, session=None)
                     except Exception as e:
                         print(f"Error processing {task_name} for subject {subject_id}: {str(e)}")
 

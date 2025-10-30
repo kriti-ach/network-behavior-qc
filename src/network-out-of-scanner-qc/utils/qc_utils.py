@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import re
 import numpy as np
+from utils.config import load_config
 
 from utils.globals import (
     DUAL_TASKS_OUT_OF_SCANNER,
@@ -20,6 +21,8 @@ from utils.globals import (
     CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS,
     SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
 )
+
+CFG = load_config()
 
 def initialize_qc_csvs(tasks, output_path):
     """
@@ -185,7 +188,7 @@ def get_task_columns(task_name, sample_df=None):
     """
     Define columns for each task's QC CSV.
     """
-    base_columns = ['subject_id']
+    base_columns = ['subject_id', 'session'] if CFG.is_fmri else ['subject_id']
     
     if is_dual_task(task_name):
         # Handle dual tasks with stop signal first
@@ -401,7 +404,11 @@ def filter_to_test_trials(df, task_name):
     Returns:
         pd.DataFrame: Filtered dataframe
     """
-    return df[df['trial_id'] == 'test_trial']
+    if 'trial_id' in df.columns:
+        filtered = df[df['trial_id'] == 'test_trial']
+        # If filter removes everything (in-scanner may not label), fall back to original
+        return filtered if len(filtered) > 0 else df
+    return df
 
 def sort_subject_ids(df):
     # Only process rows where subject_id is a string starting with 's'
@@ -413,7 +420,7 @@ def sort_subject_ids(df):
     df = df.drop(columns=['subject_id_numeric'])
     return df
 
-def update_qc_csv(output_path, task_name, subject_id, metrics):
+def update_qc_csv(output_path, task_name, subject_id, metrics, session=None):
     qc_file = output_path / f"{task_name}_qc.csv"
     try:
         df = pd.read_csv(qc_file)
@@ -421,10 +428,10 @@ def update_qc_csv(output_path, task_name, subject_id, metrics):
         for key in metrics.keys():
             if key not in df.columns:
                 df[key] = np.nan
-        new_row = pd.DataFrame({
-            'subject_id': [subject_id],
-            **metrics
-        })
+        new_row_dict = {'subject_id': [subject_id], **metrics}
+        if session is not None:
+            new_row_dict['session'] = [session]
+        new_row = pd.DataFrame(new_row_dict)
         # Ensure new_row has the same columns as df
         for col in df.columns:
             if col not in new_row.columns:
