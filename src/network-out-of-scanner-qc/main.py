@@ -2,11 +2,12 @@ import pandas as pd
 import glob
 from pathlib import Path
 import re
+import os
+import sys
 
 from utils.qc_utils import (
     initialize_qc_csvs,
     extract_task_name_out_of_scanner,
-    extract_task_name_fmri,
     update_qc_csv,
     get_task_metrics,
     append_summary_rows_to_csv,
@@ -14,9 +15,14 @@ from utils.qc_utils import (
     normalize_flanker_conditions,
 )
 from utils.violations_utils import compute_violations, aggregate_violations, plot_violations, create_violations_matrices
-from utils.globals import SINGLE_TASKS_FMRI, DUAL_TASKS_FMRI, SINGLE_TASKS_OUT_OF_SCANNER, DUAL_TASKS_OUT_OF_SCANNER
+from utils.globals import SINGLE_TASKS_OUT_OF_SCANNER, DUAL_TASKS_OUT_OF_SCANNER
 from utils.exclusion_utils import check_exclusion_criteria, remove_some_flags_for_exclusion
 from utils.config import load_config
+
+# Optional CLI override: --mode=fmri or --mode=out_of_scanner
+for arg in sys.argv[1:]:
+    if arg.startswith('--mode='):
+        os.environ['QC_DATA_MODE'] = arg.split('=', 1)[1]
 
 cfg = load_config()
 input_root = cfg.input_folder
@@ -99,7 +105,7 @@ if cfg.is_fmri:
                     if 'flanker' in task_name and 'stop_signal' in task_name:
                         df = normalize_flanker_conditions(df)
                     metrics = get_task_metrics(df, task_name)
-                    if 'stop_signal' in task_name:
+                    if (not cfg.is_fmri) and 'stop_signal' in task_name:
                         violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
                     update_qc_csv(output_path, task_name, subject_id, metrics)
                 except Exception as e:
@@ -122,7 +128,7 @@ else:
                         if 'flanker' in task_name and 'stop_signal' in task_name:
                             df = normalize_flanker_conditions(df)
                         metrics = get_task_metrics(df, task_name)
-                        if 'stop_signal' in task_name:
+                        if (not cfg.is_fmri) and 'stop_signal' in task_name:
                             violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
                         update_qc_csv(output_path, task_name, subject_id, metrics)
                     except Exception as e:
@@ -149,8 +155,9 @@ for task in tasks:
     flagged_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)
     exclusion_df.to_csv(exclusions_output_path / f"excluded_data_{task}.csv", index=False)
         
-violations_df.to_csv(violations_output_path / 'violations_data.csv', index=False)
-aggregated_violations_df = aggregate_violations(violations_df)
-aggregated_violations_df.to_csv(violations_output_path / 'aggregated_violations_data.csv', index=False)
-plot_violations(aggregated_violations_df, violations_output_path)
-create_violations_matrices(aggregated_violations_df, violations_output_path)
+if not cfg.is_fmri:
+    violations_df.to_csv(violations_output_path / 'violations_data.csv', index=False)
+    aggregated_violations_df = aggregate_violations(violations_df)
+    aggregated_violations_df.to_csv(violations_output_path / 'aggregated_violations_data.csv', index=False)
+    plot_violations(aggregated_violations_df, violations_output_path)
+    create_violations_matrices(aggregated_violations_df, violations_output_path)
