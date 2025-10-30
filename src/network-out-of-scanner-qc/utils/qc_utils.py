@@ -558,6 +558,12 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, shift_correct
     if shift_correct_forward and correct_col in df.columns:
         # Shift correct column forward by 1 (row i gets value from row i+1)
         correct_series = df[correct_col].shift(-1).fillna(0).astype(int)
+        if mask_acc.sum() > 0:
+            sample_idx = df[mask_acc].index[0]
+            print(f"DEBUG calculate_basic_metrics: cond={cond_name}, shift_correct_forward=True")
+            print(f"DEBUG: Original correct at row {sample_idx}: {df.loc[sample_idx, correct_col]}")
+            print(f"DEBUG: Shifted correct at row {sample_idx}: {correct_series.loc[sample_idx]}")
+            print(f"DEBUG: Next row {sample_idx+1} correct: {df.loc[sample_idx+1, correct_col] if sample_idx+1 < len(df) else 'N/A'}")
     else:
         correct_series = df[correct_col] if correct_col in df.columns else pd.Series([0]*len(df))
 
@@ -568,7 +574,9 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, shift_correct
     
     # For accuracy, use the shifted correct series if applicable
     if shift_correct_forward and correct_col in df.columns:
-        metrics_dict[f'{cond_name}_acc'] = correct_series[mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
+        acc_value = correct_series[mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
+        metrics_dict[f'{cond_name}_acc'] = acc_value
+        print(f"DEBUG: Calculated acc for {cond_name}: {acc_value} (from {mask_acc.sum()} matching rows)")
     else:
         metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
     metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
@@ -657,6 +665,15 @@ def compute_cued_task_switching_metrics(
                 )
                 # For in-scanner flanker+cuedTS, correct is on the next row
                 is_fmri = os.environ.get('QC_DATA_MODE', 'out_of_scanner').lower() == 'fmri'
+                if is_fmri and mask_acc.sum() > 0:
+                    print(f"DEBUG flanker+cuedTS: cond={cond}, matching_rows={mask_acc.sum()}")
+                    print(f"DEBUG: correct column exists: {'correct' in df.columns}, correct_trial exists: {'correct_trial' in df.columns}")
+                    sample_idx = df[mask_acc].index[0]
+                    print(f"DEBUG: Sample row {sample_idx}: task_condition={df.loc[sample_idx, 'task_condition']}, cue_condition={df.loc[sample_idx, 'cue_condition']}")
+                    if sample_idx + 1 < len(df):
+                        print(f"DEBUG: Next row {sample_idx+1}: correct={df.loc[sample_idx+1, 'correct'] if 'correct' in df.columns else 'N/A'}, correct_trial={df.loc[sample_idx+1, 'correct_trial'] if 'correct_trial' in df.columns else 'N/A'}")
+                    else:
+                        print(f"DEBUG: No next row (sample_idx={sample_idx}, df_len={len(df)})")
                 calculate_basic_metrics(df, mask_acc, cond, metrics, shift_correct_forward=is_fmri)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
