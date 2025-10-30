@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 import re
 import numpy as np
-from utils.config import load_config
 
 from utils.globals import (
     DUAL_TASKS_OUT_OF_SCANNER,
@@ -22,9 +21,7 @@ from utils.globals import (
     SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
 )
 
-CFG = load_config()
-
-def initialize_qc_csvs(tasks, output_path):
+def initialize_qc_csvs(tasks, output_path, include_session: bool = False):
     """
     Initialize QC CSV files for all tasks.
     
@@ -33,7 +30,7 @@ def initialize_qc_csvs(tasks, output_path):
         output_path (Path): Path to save QC CSVs
     """
     for task in tasks:
-        columns = get_task_columns(task)
+        columns = get_task_columns(task, include_session=include_session)
         df = pd.DataFrame(columns=columns)
         df.to_csv(output_path / f"{task}_qc.csv", index=False)
 
@@ -184,11 +181,11 @@ def create_stop_signal_dual_columns(paired_conditions, include_nogo_commission=F
     
     return conditions
 
-def get_task_columns(task_name, sample_df=None):
+def get_task_columns(task_name, sample_df=None, include_session: bool = False):
     """
     Define columns for each task's QC CSV.
     """
-    base_columns = ['subject_id', 'session'] if CFG.is_fmri else ['subject_id']
+    base_columns = ['subject_id', 'session'] if include_session else ['subject_id']
     
     if is_dual_task(task_name):
         # Handle dual tasks with stop signal first
@@ -424,6 +421,9 @@ def update_qc_csv(output_path, task_name, subject_id, metrics, session=None):
     qc_file = output_path / f"{task_name}_qc.csv"
     try:
         df = pd.read_csv(qc_file)
+        # Ensure session column exists if session is provided
+        if session is not None and 'session' not in df.columns:
+            df.insert(1, 'session', pd.Series(dtype=str))
         # Add any new columns from metrics that aren't in the DataFrame
         for key in metrics.keys():
             if key not in df.columns:

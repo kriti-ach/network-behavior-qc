@@ -81,8 +81,8 @@ if cfg.is_fmri:
 else:
     tasks = (SINGLE_TASKS_OUT_OF_SCANNER + DUAL_TASKS_OUT_OF_SCANNER)
 
-# Initialize QC CSVs for all tasks
-initialize_qc_csvs(tasks, output_path)
+# Initialize QC CSVs for all tasks (include session column for fmri mode)
+initialize_qc_csvs(tasks, output_path, include_session=cfg.is_fmri)
 
 violations_df = pd.DataFrame()
 
