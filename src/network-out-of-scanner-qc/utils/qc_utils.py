@@ -642,6 +642,7 @@ def compute_cued_task_switching_metrics(
     - flanker_col: column name for flanker (if dual)
     - go_nogo_col: column name for go_nogo (if dual)
     """
+    print(f"DEBUG compute_cued_task_switching_metrics: condition_type={condition_type}, is_fmri={os.environ.get('QC_DATA_MODE', 'out_of_scanner').lower() == 'fmri'}")
     metrics = {}
     for cond in condition_list:
         try:
@@ -910,6 +911,7 @@ def get_task_metrics(df, task_name):
     Returns:
         dict: Dictionary containing task-specific metrics
     """
+    print(f"DEBUG get_task_metrics START: task_name={task_name}, is_fmri={os.environ.get('QC_DATA_MODE', 'out_of_scanner').lower() == 'fmri'}")
     # First filter to test trials
     df = filter_to_test_trials(df, task_name)
     
@@ -1028,6 +1030,9 @@ def get_task_metrics(df, task_name):
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
             return compute_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
+            print(f"DEBUG get_task_metrics: Found flanker+cuedTS task: {task_name}")
+            print(f"DEBUG: DataFrame columns: {list(df.columns)}")
+            print(f"DEBUG: DataFrame shape: {df.shape}")
             return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
         elif ('go_nogo' in task_name and 'cued_task_switching' in task_name) or ('go_nogo' in task_name and 'CuedTS' in task_name):
             return compute_cued_task_switching_metrics(df, GO_NOGO_WITH_CUED_CONDITIONS, 'go_nogo', go_nogo_col='go_nogo_condition')

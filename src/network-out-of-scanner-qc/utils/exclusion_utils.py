@@ -64,6 +64,15 @@ def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, th
         if len(existing) > 0:
             return exclusion_df  # Skip duplicate
     
+    # Ensure session column exists and is in the right position (after subject_id)
+    if session is not None and 'session' not in exclusion_df.columns:
+        # Insert session column right after subject_id
+        cols = list(exclusion_df.columns)
+        subj_idx = cols.index('subject_id') if 'subject_id' in cols else 0
+        cols.insert(subj_idx + 1, 'session')
+        exclusion_df = exclusion_df.reindex(columns=cols)
+        exclusion_df['session'] = pd.Series(dtype=str)
+    
     # Append new row
     row_dict = {
         'subject_id': [subject_id],
@@ -73,10 +82,16 @@ def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, th
     }
     if session is not None:
         row_dict['session'] = [session]
-        # Ensure column exists
-        if 'session' not in exclusion_df.columns:
-            exclusion_df['session'] = pd.Series(dtype=str)
-    exclusion_df = pd.concat([exclusion_df, pd.DataFrame(row_dict)], ignore_index=True)
+    
+    # Ensure row_dict columns match exclusion_df columns (with session in correct position)
+    new_row = pd.DataFrame(row_dict)
+    for col in exclusion_df.columns:
+        if col not in new_row.columns:
+            new_row[col] = None
+    
+    # Reorder columns to match exclusion_df
+    new_row = new_row[exclusion_df.columns]
+    exclusion_df = pd.concat([exclusion_df, new_row], ignore_index=True)
     return exclusion_df
 
 def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
