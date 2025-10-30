@@ -464,7 +464,7 @@ def calculate_acc(df, mask_acc):
     Returns:
         float: acc (mean of correct_trial)
     """
-    correct_col = 'correct' if 'correct' in df.columns else 'correct_trial'
+    correct_col = 'correct_trial' if 'correct_trial' in df.columns else 'correct'
     return df[mask_acc][correct_col].mean() if len(df[mask_acc]) > 0 else np.nan
 
 def calculate_rt(df, mask_rt):
@@ -587,7 +587,7 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict):
         # Don't calculate omission_rate or commission_rate for nogo
     else:
         # For go: calculate all metrics normally
-        correct_col = 'correct' if 'correct' in df.columns else 'correct_trial'
+        correct_col = 'correct_trial' if 'correct_trial' in df.columns else 'correct'
         mask_rt = mask_acc & (df[correct_col] == 1)
         mask_omission = mask_acc & (df['key_press'] == -1)
         mask_commission = mask_acc & (df['key_press'] != -1) & (df[correct_col] == 0)
