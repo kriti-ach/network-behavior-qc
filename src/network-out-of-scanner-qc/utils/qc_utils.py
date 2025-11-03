@@ -52,6 +52,41 @@ def extend_metric_columns(base_columns, conditions):
         for metric in metric_types
     ]
 
+def infer_task_name_from_filename(fname: str) -> str | None:
+    name = fname.lower()
+    # Ignore practice files by caller
+    parts = []
+    if 'stop_signal' in name:
+        parts.append('stop_signal')
+    if 'go_nogo' in name:
+        parts.append('go_nogo')
+    if 'flanker' in name:
+        parts.append('flanker')
+    if 'shape_matching' in name:
+        parts.append('shape_matching')
+    if 'directed_forgetting' in name:
+        parts.append('directed_forgetting')
+    if 'spatial_task_switching' in name:
+        parts.append('spatial_task_switching')
+    if 'cued_task_switching' in name or 'cuedts' in name:
+        parts.append('cued_task_switching')
+    if 'n_back' in name or 'nback' in name:
+        parts.append('n_back')
+    if not parts:
+        return None
+    if len(parts) == 1:
+        return f"{parts[0]}_single_task_network"
+    # Dual task: stable canonical order with 'with'
+    # Prefer stop_signal first if present, else lexicographic for consistency
+    if 'stop_signal' in parts:
+        first = 'stop_signal'
+        parts.remove('stop_signal')
+        second = parts[0]
+    else:
+        parts = sorted(parts)
+        first, second = parts[0], parts[1]
+    return f"{first}_with_{second}"
+
 def extend_go_nogo_metric_columns(base_columns, conditions):
     """
     Extend base columns with acc and RT metrics for go_nogo tasks.
