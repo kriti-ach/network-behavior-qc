@@ -407,7 +407,7 @@ def filter_to_test_trials(df, task_name):
         return filtered if len(filtered) > 0 else df
     return df
 
-def preprocess_rt_tail_cutoff(df: pd.DataFrame, subject_id: str | None = None, session: str | None = None, task_name: str | None = None):
+def preprocess_rt_tail_cutoff(df: pd.DataFrame, subject_id: str | None = None, session: str | None = None, task_name: str | None = None, last_n_test_trials: int = LAST_N_TEST_TRIALS):
     """
     Detects if the experiment was terminated early by finding the last valid
     response ('rt' != -1) within 'test_trial' rows. If any trials exist after
@@ -443,14 +443,14 @@ def preprocess_rt_tail_cutoff(df: pd.DataFrame, subject_id: str | None = None, s
         # Mixed tail; do not trim
         return df, None, False
 
-    # Additional guard: require that the last 5 test_trial RTs are -1
+    # Additional guard: require that the last last_n_test_trials test_trial RTs are -1
     if 'trial_id' in df.columns:
         df_test_end = df[df['trial_id'] == 'test_trial']
-        if len(df_test_end) < 5:
+        if len(df_test_end) < last_n_test_trials:
             # Not enough trailing test trials to be confident; do not trim
             return df, None, False
-        if not (pd.to_numeric(df_test_end['rt'].tail(5), errors='coerce').fillna(-1) == -1).all():
-            # Do not trim unless the final 5 test trials are all -1
+        if not (pd.to_numeric(df_test_end['rt'].tail(last_n_test_trials), errors='coerce').fillna(-1) == -1).all():
+            # Do not trim unless the final last_n_test_trials test trials are all -1
             return df, None, False
 
     # Trim to include up to and including last_valid_idx
