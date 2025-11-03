@@ -995,7 +995,10 @@ def get_task_metrics(df, task_name):
     """
     # First filter to test trials
     df = filter_to_test_trials(df, task_name)
-    
+    if 'cued_task_switching' in task_name and 'flanker' in task_name:
+        print(f"DEBUG get_task_metrics: Found cued+flanker task: {task_name}")
+    elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
+        print(f"DEBUG get_task_metrics: Found cued+spatial task: {task_name}")
     if is_dual_task(task_name):
         # For dual tasks, we need both sets of conditions
         if ('directed_forgetting' in task_name and 'flanker' in task_name) or ('directedForgetting' in task_name and 'flanker' in task_name):
