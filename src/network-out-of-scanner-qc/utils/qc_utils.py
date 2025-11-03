@@ -407,6 +407,38 @@ def filter_to_test_trials(df, task_name):
         return filtered if len(filtered) > 0 else df
     return df
 
+def preprocess_rt_tail_cutoff(df: pd.DataFrame):
+    """
+    Detect if, from some index onward within test trials, all rt values are -1.
+    If so, trim rows at/after that test-trial index. Returns a tuple:
+    (df_trimmed, cutoff_index_within_test_trials, cutoff_before_halfway)
+
+    If there is no cutoff, returns (df, None, False).
+    This is generic and applies to any task format that includes 'trial_id' and 'rt'.
+    """
+    if 'trial_id' not in df.columns or 'rt' not in df.columns:
+        return df, None, False
+
+    df_test = df[df['trial_id'] == 'test_trial']
+    if df_test.empty:
+        return df, None, False
+
+    is_minus1 = (df_test['rt'] == -1)
+    # Identify first index where all following rts are -1 (suffix all-True)
+    suffix_all = is_minus1[::-1].cummin()[::-1]
+    if not suffix_all.any():
+        return df, None, False
+
+    first_all_idx = suffix_all.idxmax()
+    cutoff_pos = df_test.index.get_loc(first_all_idx)
+    halfway = len(df_test) / 2.0
+    cutoff_before_halfway = cutoff_pos < halfway
+
+    # Keep non-test rows and test rows strictly before cutoff_pos
+    keep_idx = df.index.difference(df_test.index[cutoff_pos:])
+    df_trimmed = df.loc[keep_idx].copy()
+    return df_trimmed, cutoff_pos, cutoff_before_halfway
+
 def sort_subject_ids(df):
     # Only process rows where subject_id is a string starting with 's'
     df = df.copy()

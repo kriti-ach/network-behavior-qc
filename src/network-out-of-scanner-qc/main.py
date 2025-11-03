@@ -13,6 +13,7 @@ from utils.qc_utils import (
     append_summary_rows_to_csv,
     correct_columns,
     normalize_flanker_conditions,
+    preprocess_rt_tail_cutoff,
 )
 from utils.violations_utils import compute_violations, aggregate_violations, plot_violations, create_violations_matrices
 from utils.globals import SINGLE_TASKS_OUT_OF_SCANNER, DUAL_TASKS_OUT_OF_SCANNER
@@ -105,6 +106,14 @@ if cfg.is_fmri:
                     df = pd.read_csv(file)
                     if 'flanker' in task_name and 'stop_signal' in task_name:
                         df = normalize_flanker_conditions(df)
+                    # Generic RT tail cutoff (test_trial rts == -1)
+                    df_trimmed, cut_pos, cut_before_halfway = preprocess_rt_tail_cutoff(df)
+                    if cut_pos is not None:
+                        print(f"INFO: {subject_id} {Path(ses_dir).name} {task_name} cutoff at test index {cut_pos}; before_halfway={cut_before_halfway}")
+                        if cut_before_halfway:
+                            print(f"INFO: Skipping {subject_id} {Path(ses_dir).name} {task_name} entirely due to early cutoff")
+                            continue
+                        df = df_trimmed
                     metrics = get_task_metrics(df, task_name)
                     if (not cfg.is_fmri) and 'stop_signal' in task_name:
                         violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
@@ -130,6 +139,14 @@ else:
                         # Normalize flanker conditions (remove h_ and f_ prefixes)
                         if 'flanker' in task_name and 'stop_signal' in task_name:
                             df = normalize_flanker_conditions(df)
+                        # Generic RT tail cutoff (test_trial rts == -1)
+                        df_trimmed, cut_pos, cut_before_halfway = preprocess_rt_tail_cutoff(df)
+                        if cut_pos is not None:
+                            print(f"INFO: {subject_id} {task_name} cutoff at test index {cut_pos}; before_halfway={cut_before_halfway}")
+                            if cut_before_halfway:
+                                print(f"INFO: Skipping {subject_id} {task_name} entirely due to early cutoff")
+                                continue
+                            df = df_trimmed
                         metrics = get_task_metrics(df, task_name)
                         if (not cfg.is_fmri) and 'stop_signal' in task_name:
                             violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
