@@ -5,8 +5,6 @@ import re
 import numpy as np
 
 from utils.globals import (
-    DUAL_TASKS,
-    SINGLE_TASKS,
     FLANKER_CONDITIONS,
     DIRECTED_FORGETTING_CONDITIONS,
     SPATIAL_TASK_SWITCHING_CONDITIONS,
@@ -64,12 +62,12 @@ def infer_task_name_from_filename(fname: str) -> str | None:
         parts.append('shape_matching')
     if 'directed_forgetting' in name:
         parts.append('directed_forgetting')
-    if 'cued_task_switching' in name or 'cuedts' in name:
-        parts.append('cued_task_switching')
     if 'spatial_task_switching' in name:
         parts.append('spatial_task_switching')
     if 'flanker' in name:
         parts.append('flanker')
+    if 'cued_task_switching' in name or 'cuedts' in name:
+        parts.append('cued_task_switching')
     if 'n_back' in name or 'nback' in name:
         parts.append('n_back')
     if not parts:
@@ -390,9 +388,40 @@ def get_task_columns(task_name, sample_df=None, include_session: bool = False):
 
 def is_dual_task(task_name):
     """
-    Check if the task is a dual task.
+    Check if the task is a dual task by counting distinct task components.
+    
+    A dual task contains 2 or more distinct task components. Task components are:
+    - stop_signal
+    - go_nogo
+    - n_back
+    - flanker
+    - cued_task_switching
+    - spatial_task_switching
+    - shape_matching
+    - directed_forgetting
+    
+    This works for both predefined names (e.g., "flanker_with_cued_task_switching") 
+    and inferred names (e.g., "cued_task_switching_with_flanker").
     """
-    return any(task in task_name for task in DUAL_TASKS)
+    # Define task components (order matters - check longer names first to avoid partial matches)
+    task_components = [
+        'cued_task_switching',
+        'spatial_task_switching',
+        'directed_forgetting',
+        'shape_matching',
+        'stop_signal',
+        'go_nogo',
+        'n_back',
+        'flanker'
+    ]
+    
+    # Count how many distinct task components appear in the task name
+    count = 0
+    for component in task_components:
+        if component in task_name:
+            count += 1
+    
+    return count >= 2
 
 def extract_task_name_out_of_scanner(filename):
     """
@@ -756,7 +785,6 @@ def compute_cued_task_switching_metrics(
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
                 # For in-scanner flanker+cuedTS, correct is on the next row
-                print(f"computing cued+flanker")
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
@@ -995,10 +1023,6 @@ def get_task_metrics(df, task_name):
     """
     # First filter to test trials
     df = filter_to_test_trials(df, task_name)
-    if 'cued_task_switching' in task_name and 'flanker' in task_name:
-        print(f"DEBUG get_task_metrics: Found cued+flanker task: {task_name}")
-    elif 'cued_task_switching' in task_name and 'spatial_task_switching' in task_name:
-        print(f"DEBUG get_task_metrics: Found cued+spatial task: {task_name}")
     if is_dual_task(task_name):
         # For dual tasks, we need both sets of conditions
         if ('directed_forgetting' in task_name and 'flanker' in task_name) or ('directedForgetting' in task_name and 'flanker' in task_name):
