@@ -650,16 +650,28 @@ def calculate_go_nogo_metrics(df, mask_acc, cond_name, metrics_dict, response_eq
     if is_nogo:
         # For nogo: only calculate RT for commission errors (incorrect responses)
         mask_rt = mask_acc & (df['key_press'] != -1)
-        metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
+        # For in-scanner nogo, use response equality like go conditions
+        if response_equality and {'correct_response','key_press'}.issubset(df.columns):
+            # Coerce both to numeric for comparison, handling NaN
+            kp = pd.to_numeric(df['key_press'], errors='coerce')
+            cr = pd.to_numeric(df['correct_response'], errors='coerce')
+            eq_series = (kp == cr).astype(int)
+            metrics_dict[f'{cond_name}_acc'] = eq_series[mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
+        else:
+            metrics_dict[f'{cond_name}_acc'] = calculate_acc(df, mask_acc)
         metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
         # Don't calculate omission_rate or commission_rate for nogo
     else:
         # For go: calculate all metrics
         if response_equality and {'correct_response','key_press'}.issubset(df.columns):
-            eq_series = (df['key_press'] == df['correct_response']).astype(int)
+            # Coerce both to numeric for comparison, handling NaN
+            kp = pd.to_numeric(df['key_press'], errors='coerce')
+            cr = pd.to_numeric(df['correct_response'], errors='coerce')
+            eq_series = (kp == cr).astype(int)
             mask_rt = mask_acc & (eq_series == 1)
             mask_omission = mask_acc & (df['key_press'] == -1)
-            mask_commission = mask_acc & (df['key_press'] != -1) & (eq_series == 0)
+            # Commission: responded but incorrect (eq_series == 0 means incorrect)
+            mask_commission = mask_acc & (df['key_press'] != -1) & (eq_series == 0) & eq_series.notna()
             metrics_dict[f'{cond_name}_acc'] = eq_series[mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
         else:
             correct_col = 'correct_trial' if 'correct_trial' in df.columns else 'correct'
