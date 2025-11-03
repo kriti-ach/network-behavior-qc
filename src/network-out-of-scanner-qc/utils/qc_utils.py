@@ -407,7 +407,7 @@ def filter_to_test_trials(df, task_name):
         return filtered if len(filtered) > 0 else df
     return df
 
-def preprocess_rt_tail_cutoff(df: pd.DataFrame, debug_key: tuple | None = None, subject_id: str | None = None, session: str | None = None, task_name: str | None = None):
+def preprocess_rt_tail_cutoff(df: pd.DataFrame):
     """
     Detects if the experiment was terminated early by finding the last valid
     response ('rt' != -1) within 'test_trial' rows. If any trials exist after
@@ -423,63 +423,45 @@ def preprocess_rt_tail_cutoff(df: pd.DataFrame, debug_key: tuple | None = None, 
     if 'trial_id' not in df.columns or 'rt' not in df.columns:
         return df, None, False
 
-    # Ensure 'rt' column is numeric, coercing errors to NaN
-    df['rt'] = pd.to_numeric(df['rt'], errors='coerce')
-    # Fill any NaN values that might result from coercion, treating them as non-responses
-    df['rt'] = df['rt'].fillna(-1)
+    # Ensure 'rt' column is numeric; treat NaN as non-response (-1)
+    df['rt'] = pd.to_numeric(df['rt'], errors='coerce').fillna(-1)
 
-    df_test = df[df['trial_id'] == 'test_trial']
-    if df_test.empty:
+    # Find the last row (across ALL rows) with a valid response
+    valid_mask_all = df['rt'] != -1
+    if not valid_mask_all.any():
+        # No valid responses at all; nothing to trim specially here
         return df, None, False
 
-    # Find all test trials that have a valid response (RT is not -1)
-    valid_responses = df_test[df_test['rt'] != -1]
-
-    # If there are no valid responses at all, return the original df
-    if valid_responses.empty:
+    last_valid_idx = valid_mask_all[valid_mask_all].index[-1]
+    if last_valid_idx == df.index[-1]:
+        # Already ends with a valid response; no trailing -1 segment
         return df, None, False
 
-    # Get the pandas index of the last valid response and the last test trial
-    last_valid_response_idx = valid_responses.index[-1]
-    last_test_trial_idx = df_test.index[-1]
-
-    # If the last test trial IS the last valid response, there's no tail to cut.
-    if last_valid_response_idx == last_test_trial_idx:
+    # Verify that ALL rows after last_valid_idx are indeed -1
+    tail_all_minus1 = (df.loc[last_valid_idx:].iloc[1:]['rt'] == -1).all()
+    if not tail_all_minus1:
+        # Mixed tail; do not trim
         return df, None, False
 
-    # --- A tail exists, so we proceed with trimming ---
-
-    # Find the integer position of the last valid response in the original df
-    cutoff_iloc = df.index.get_loc(last_valid_response_idx)
-
-    # Trim the dataframe. We keep all rows up to and including the last valid response.
+    # Trim to include up to and including last_valid_idx
+    cutoff_iloc = df.index.get_loc(last_valid_idx)
     df_trimmed = df.iloc[:cutoff_iloc + 1].copy()
 
-    # --- Calculate the returned metadata correctly ---
+    # Compute cutoff position within test trials for halfway reporting
+    df_test = df[df['trial_id'] == 'test_trial']
+    if df_test.empty:
+        return df_trimmed, 0, False
 
-    # Find the first test trial that was dropped
-    first_dropped_trial = df_test.loc[last_valid_response_idx:].iloc[1]
-    
-    # Get the integer position of this first dropped trial within df_test
-    cutoff_pos = df_test.index.get_loc(first_dropped_trial.name)
+    # Identify first dropped test trial (if any)
+    dropped_test = df_test.index[df_test.index > last_valid_idx]
+    if len(dropped_test) == 0:
+        # Tail contained no test trials; consider as no cutoff for halfway purposes
+        return df_trimmed, None, False
+    first_dropped = dropped_test[0]
+    cutoff_pos = df_test.index.get_loc(first_dropped)
 
     halfway = len(df_test) / 2.0
     cutoff_before_halfway = cutoff_pos < halfway
-
-    # Conditional debug for a specific subject/session/task
-    if debug_key is not None and subject_id is not None and session is not None and task_name is not None:
-        if debug_key == (subject_id, session, task_name):
-            print(f"DEBUG cutoff for {subject_id} {session} {task_name}:")
-            print(f"DEBUG test_trial count={len(df_test)}, last_valid_response_idx={last_valid_response_idx}, last_test_trial_idx={last_test_trial_idx}")
-            print(f"DEBUG cutoff_pos_within_test={cutoff_pos}, halfway={len(df_test)/2.0}, before_halfway={cutoff_before_halfway}")
-            # Show a small window around the cutoff in test trials
-            start = max(0, cutoff_pos - 3)
-            end = min(len(df_test), cutoff_pos + 3)
-            window = df_test.iloc[start:end][['rt','trial_id']]
-            print("DEBUG test_trial rt window around cutoff:\n", window.to_string())
-            # Show last few rows of trimmed df and first few rows of removed tail
-            print("DEBUG tail first rows (removed):\n", df_test.iloc[cutoff_pos:cutoff_pos+5][['rt','trial_id']].to_string())
-            print("DEBUG kept last rows (trimmed df):\n", df_trimmed.tail(5)[['rt','trial_id']].to_string())
 
     return df_trimmed, cutoff_pos, cutoff_before_halfway
 
