@@ -700,10 +700,13 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
     correct_col = 'correct' if cued_with_flanker else 'correct_trial'
     
     # For cued+flanker: task_condition and cue_condition are on row N, but correct is on row N+1
-    # So we shift the correct column backwards by 1 to align with the condition rows
+    # We need to shift by actual row position, not index position (since indices may be non-consecutive)
     if cued_with_flanker:
-        correct_series = df[correct_col].shift(-1)  # Shift backwards: row N gets row N+1's value
-        print(f"correct_series: {correct_series}")
+        # Reset index temporarily to ensure consecutive row positions, shift, then restore original index
+        original_index = df.index.copy()
+        df_reset = df.reset_index(drop=True)
+        correct_series = df_reset[correct_col].shift(-1)
+        correct_series.index = original_index  # Restore original index alignment
     else:
         correct_series = df[correct_col]
     
