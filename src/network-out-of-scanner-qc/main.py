@@ -94,7 +94,7 @@ if cfg.is_fmri:
                             continue
                         else:
                             df = df_trimmed
-                    metrics = get_task_metrics(df, task_name)
+                    metrics = get_task_metrics(df, task_name, cfg)
                     if (not cfg.is_fmri) and 'stop_signal' in task_name:
                         violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
                     # Session for fmri from ses-* directory name
@@ -139,7 +139,7 @@ else:
                                 continue
                             else:
                                 df = df_trimmed
-                        metrics = get_task_metrics(df, task_name)
+                        metrics = get_task_metrics(df, task_name, cfg)
                         if (not cfg.is_fmri) and 'stop_signal' in task_name:
                             violations_df = pd.concat([violations_df, compute_violations(subject_id, df, task_name)])
                         update_qc_csv(output_path, task_name, subject_id, metrics, session=None)

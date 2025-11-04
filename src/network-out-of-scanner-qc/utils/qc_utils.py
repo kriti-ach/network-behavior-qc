@@ -945,9 +945,35 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
             )
     return metrics
 
-def compute_cued_spatial_task_switching_metrics(df, condition_list):
+def compute_fmri_cued_spatial_task_switching_metrics(df, condition_list):
     """
-    Compute metrics for cued task switching with spatial task switching dual task.
+    Compute metrics for cued task switching with spatial task switching dual task (fMRI mode).
+    Uses the task_switch column directly which contains combined condition values like
+    'cuedtstaycstay_spatialtstaycstay'.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing task data with 'task_switch' column
+        condition_list (list): List of combined conditions (e.g., SPATIAL_WITH_CUED_CONDITIONS)
+        
+    Returns:
+        dict: Metrics for cued + spatial task switching
+    """
+    metrics = {}
+    if 'task_switch' not in df.columns:
+        print("Warning: 'task_switch' column not found for fMRI cued+spatial task")
+        return metrics
+    
+    for cond in condition_list:
+        # Match rows where task_switch column exactly equals the condition
+        mask_acc = df['task_switch'].astype(str).str.strip() == cond
+        calculate_basic_metrics(df, mask_acc, cond, metrics)
+    
+    return metrics
+
+def compute_out_of_scanner_cued_spatial_task_switching_metrics(df, condition_list):
+    """
+    Compute metrics for cued task switching with spatial task switching dual task (out-of-scanner mode).
+    Parses separate task_condition, cue_condition, and task_switch columns.
     
     Args:
         df (pd.DataFrame): DataFrame containing task data
@@ -1012,7 +1038,7 @@ def compute_cued_spatial_task_switching_metrics(df, condition_list):
         )
     return metrics
 
-def get_task_metrics(df, task_name):
+def get_task_metrics(df, task_name, config):
     """
     Main function to get metrics for any task.
     
@@ -1138,7 +1164,11 @@ def get_task_metrics(df, task_name):
             return calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name), spatialts=True, shapematching=True)
         
         elif ('cued_task_switching' in task_name and 'spatial_task_switching' in task_name) or ('CuedTS' in task_name and 'spatialTS' in task_name):
-            return compute_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
+            # Determine mode based on column structure
+            if not config.is_fmri:
+                return compute_out_of_scanner_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
+            else:
+                return compute_fmri_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
             return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
         elif ('go_nogo' in task_name and 'cued_task_switching' in task_name) or ('go_nogo' in task_name and 'CuedTS' in task_name):
