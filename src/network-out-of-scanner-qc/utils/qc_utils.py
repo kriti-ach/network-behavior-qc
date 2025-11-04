@@ -703,6 +703,7 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
     # So we shift the correct column backwards by 1 to align with the condition rows
     if cued_with_flanker:
         correct_series = df[correct_col].shift(-1)  # Shift backwards: row N gets row N+1's value
+        print(f"correct_series: {correct_series}")
     else:
         correct_series = df[correct_col]
     
