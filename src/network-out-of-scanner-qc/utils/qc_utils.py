@@ -535,8 +535,32 @@ def sort_subject_ids(df):
     df['subject_id_numeric'] = df['subject_id'].apply(
         lambda x: int(x.replace('s', '')) if isinstance(x, str) and x.startswith('s') else float('inf')
     )
-    df = df.sort_values(by='subject_id_numeric', ascending=True)
-    df = df.drop(columns=['subject_id_numeric'])
+    
+    # If session column exists, extract numeric session value for sorting
+    if 'session' in df.columns:
+        def extract_session_numeric(x):
+            if pd.isna(x) or x is None:
+                return float('inf')
+            # Handle formats like "ses-1", "ses-11", "1", "11", etc.
+            x_str = str(x).strip()
+            if x_str.startswith('ses-'):
+                try:
+                    return int(x_str.replace('ses-', ''))
+                except ValueError:
+                    return float('inf')
+            else:
+                try:
+                    return int(x_str)
+                except ValueError:
+                    return float('inf')
+        
+        df['session_numeric'] = df['session'].apply(extract_session_numeric)
+        df = df.sort_values(by=['subject_id_numeric', 'session_numeric'], ascending=True)
+        df = df.drop(columns=['subject_id_numeric', 'session_numeric'])
+    else:
+        df = df.sort_values(by='subject_id_numeric', ascending=True)
+        df = df.drop(columns=['subject_id_numeric'])
+    
     return df
 
 def update_qc_csv(output_path, task_name, subject_id, metrics, session=None):
