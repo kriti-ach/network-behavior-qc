@@ -698,17 +698,39 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
     """
     # Use 'correct' if instructed and present; else default to 'correct_trial' then 'correct'
     correct_col = 'correct' if cued_with_flanker else 'correct_trial'
+    
     if cued_with_flanker:
-        mask_rt = mask_acc & (df[correct_col].iloc[mask_acc.index + 1] == 1)
-        print(f'df[correct_col].iloc[mask_acc.index]: {df[correct_col].iloc[mask_acc.index]}')
-        print(f'df[correct_col].iloc[mask_acc.index + 1]: {df[correct_col].iloc[mask_acc.index + 1]}')
+        # For cued+flanker: task_condition and cue_condition are on row N, but correct is on row N+1
+        # We need to map each condition row index to the correct value from the next row position
+        idx_list = list(df.index)
+        correct_series = pd.Series(index=df.index, dtype=float)
+        
+        # Map each index to the next row's correct value
+        for i, current_idx in enumerate(idx_list):
+            if i + 1 < len(idx_list):
+                next_idx = idx_list[i + 1]
+                correct_series.loc[current_idx] = df[correct_col].loc[next_idx]
+            else:
+                correct_series.loc[current_idx] = np.nan
+        
+        # Create masks using the shifted correct values
+        correct_mask = correct_series == 1
+        mask_rt = mask_acc & correct_mask
+        # For accuracy, use the shifted correct values for the masked rows
+        acc_value = correct_series[mask_acc].mean() if mask_acc.sum() > 0 else np.nan
     else:
-        mask_rt = mask_acc & (df[correct_col] == 1)
+        correct_mask = df[correct_col] == 1
+        mask_rt = mask_acc & correct_mask
+        acc_value = df[correct_col][mask_acc].mean() if mask_acc.sum() > 0 else np.nan
+    
     mask_omission = mask_acc & (df['key_press'] == -1) if 'key_press' in df.columns else pd.Series([False] * len(df))
-    # Commission: responded but incorrect (df[correct_col] == 0 means incorrect)
-    mask_commission = mask_acc & (df['key_press'] != -1) & (df[correct_col] == 0) if 'key_press' in df.columns else pd.Series([False] * len(df))
+    # Commission: responded but incorrect (correct_mask == False means incorrect)
+    if cued_with_flanker:
+        mask_commission = mask_acc & (df['key_press'] != -1) & (~correct_mask) if 'key_press' in df.columns else pd.Series([False] * len(df))
+    else:
+        mask_commission = mask_acc & (df['key_press'] != -1) & (~correct_mask) if 'key_press' in df.columns else pd.Series([False] * len(df))
+    
     total_num_trials = len(df[mask_acc])
-    acc_value = df[correct_col].loc[mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
     metrics_dict[f'{cond_name}_acc'] = acc_value
     metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
     metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
