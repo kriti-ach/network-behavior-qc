@@ -725,6 +725,8 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
         mask_rt = mask_acc & correct_mask
         # For accuracy, use the shifted correct values for the masked rows
         acc_value = correct_series[mask_acc].notna().mean() if mask_acc.sum() > 0 else np.nan
+        print(f"correct_series[mask_acc]: {correct_series[mask_acc]}")
+        
     else:
         correct_mask = df[correct_col] == 1
         mask_rt = mask_acc & correct_mask
