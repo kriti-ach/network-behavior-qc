@@ -467,7 +467,7 @@ def filter_to_test_trials(df, task_name):
     Returns:
         pd.DataFrame: Filtered dataframe
     """
-    if task_name == 'flanker_with_cued_task_switching':
+    if task_name == 'cued_task_switching_with_flanker':
         # For in-scanner flanker+cued: include both test_trial and test_cue rows
         # test_cue contains the stay/switch information needed for condition matching
         if 'trial_id' in df.columns:
