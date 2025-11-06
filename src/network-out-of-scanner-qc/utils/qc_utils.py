@@ -13,10 +13,11 @@ from utils.globals import (
     GO_NOGO_CONDITIONS,
     SHAPE_MATCHING_CONDITIONS,
     FLANKER_WITH_CUED_CONDITIONS,
+    FLANKER_WITH_CUED_CONDITIONS_FMRI,
     GO_NOGO_WITH_CUED_CONDITIONS,
     SHAPE_MATCHING_WITH_CUED_CONDITIONS,
     CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS,
-    SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING
+    SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING,
 )
 
 def initialize_qc_csvs(tasks, output_path, include_session: bool = False):
@@ -838,7 +839,10 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                # For in-scanner flanker+cuedTS, correct is on the next row
+                print(f'flanker: {flanker}')
+                print(f'task: {task}')
+                print(f'cue: {cue}')
+                print(f'mask_acc: {mask_acc}')
                 calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker=True)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
@@ -1222,7 +1226,10 @@ def get_task_metrics(df, task_name, config):
             else:
                 return compute_fmri_cued_spatial_task_switching_metrics(df, SPATIAL_WITH_CUED_CONDITIONS)
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
-            return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
+            if config.is_fmri:
+                return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS_FMRI, 'flanker', flanker_col='flanker_condition')
+            else:
+                return compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
         elif ('go_nogo' in task_name and 'cued_task_switching' in task_name) or ('go_nogo' in task_name and 'CuedTS' in task_name):
             return compute_cued_task_switching_metrics(df, GO_NOGO_WITH_CUED_CONDITIONS, 'go_nogo', go_nogo_col='go_nogo_condition')
         elif ('shape_matching' in task_name and 'cued_task_switching' in task_name) or ('shape_matching' in task_name and 'CuedTS' in task_name):

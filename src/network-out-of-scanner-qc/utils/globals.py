@@ -65,6 +65,7 @@ SHAPE_MATCHING_WITH_CUED_CONDITIONS = ['SSS_tstay_cstay', 'SSS_tstay_cswitch',
                                 'SNN_tswitch_new_cswitch']
 CUED_TASK_SWITCHING_WITH_DIRECTED_FORGETTING_CONDITIONS = ['con_tstay_cstay', 'con_tstay_cswitch', 'con_tswitch_cswitch', 'pos_tstay_cstay', 'pos_tstay_cswitch', 'pos_tswitch_cswitch', 'neg_tstay_cstay', 'neg_tstay_cswitch', 'neg_tswitch_cswitch']
 SHAPE_MATCHING_CONDITIONS_WITH_DIRECTED_FORGETTING = ['match', 'mismatch']
+FLANKER_WITH_CUED_CONDITIONS_FMRI = ['congruent_tstay_cstay', 'congruent_tstay_cswitch', 'congruent_tswitch_cswitch', 'incongruent_tstay_cstay', 'incongruent_tstay_cswitch', 'incongruent_tswitch_cswitch']
 
 # Stop signal task
 STOP_SUCCESS_ACC_LOW_THRESHOLD = 0.25
