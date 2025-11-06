@@ -718,6 +718,7 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
                     closest_correct = correct_val
                     break
             correct_series.loc[current_idx] = closest_correct
+            print(f"correct_series.loc[current_idx]: {correct_series.loc[current_idx]}")
         
         # Create masks using the shifted correct values
         correct_mask = correct_series == 1
