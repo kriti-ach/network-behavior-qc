@@ -692,7 +692,7 @@ def add_category_accuracies(df, column_name, label_to_metric_key, metrics, stops
         else:
             metrics[metric_key] = calculate_acc(df, mask)
 
-def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_flanker=False):
+def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict):
     """
     Calculate all basic metrics (acc, RT, omission rate, commission rate) for a condition.
     
@@ -706,50 +706,22 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
         None: Updates metrics_dict in place
     """
     # Use 'correct' if instructed and present; else default to 'correct_trial' then 'correct'
-    correct_col = 'correct' if cued_with_flanker else 'correct_trial'
-    
-    if cued_with_flanker:
-        # For cued+flanker in-scanner: 
-        # - test_trial rows have the correct values (responses)
-        # - test_cue rows have condition info (task_condition, cue_condition)
-        # - mask_acc includes both test_trial and test_cue rows (for condition matching)
-        # - But accuracy should only use test_trial rows (which have correct values)
-        has_trial_id = 'trial_id' in df.columns
-        
-        # Use shift(-1) to get correct value from next row
-        # Reset index to ensure proper shifting, then restore
-        original_index = df.index.copy()
-        df_reset = df.reset_index(drop=True)
-        correct_series = df_reset[correct_col].shift(-1)
-        correct_series.index = original_index
-        
-        # For test_trial rows, use their own correct value (not shifted)
-        if has_trial_id:
-            test_trial_mask = df['trial_id'] == 'test_trial'
-            correct_series.loc[test_trial_mask] = df.loc[test_trial_mask, correct_col]
-        
-        # For accuracy calculation: only use test_trial rows (which have correct values)
-        if has_trial_id:
-            test_trial_mask = df['trial_id'] == 'test_trial'
-            acc_mask = mask_acc & test_trial_mask
-        else:
-            acc_mask = mask_acc
-        
-        # Create masks using the correct values
-        correct_mask = correct_series == 1
-        mask_rt = mask_acc & correct_mask
-        # For accuracy, use the mean of correct values from test_trial rows only
-        acc_value = correct_series[acc_mask].mean() if acc_mask.sum() > 0 else np.nan
-        
+    correct_col = 'correct_trial' if 'correct_trial' in df.columns else 'correct'
+
+    # Adjust the mask based on whether the correct_col is 'correct', which it is in flanker + cued in-scanner
+    if correct_col == 'correct':
+        # Shift the mask by 1 to account for the correct column being one row below
+        correct_mask = df[correct_col].shift(-1) == 1  # Shift the column up by 1
     else:
         correct_mask = df[correct_col] == 1
-        mask_rt = mask_acc & correct_mask
-        acc_value = df[correct_col][mask_acc].notna().mean() if mask_acc.sum() > 0 else np.nan
-    
+
+    mask_rt = mask_acc & correct_mask
     mask_omission = mask_acc & (df['key_press'] == -1) if 'key_press' in df.columns else pd.Series([False] * len(df))
-    mask_commission = mask_acc & (df['key_press'] != -1) & (~correct_mask) if 'key_press' in df.columns else pd.Series([False] * len(df))
-    
+    mask_commission = mask_acc & (df['key_press'] != -1) & correct_mask if 'key_press' in df.columns else pd.Series([False] * len(df))
+
     total_num_trials = len(df[mask_acc])
+
+    acc_value = df[correct_col][mask_acc].mean() if len(df[mask_acc]) > 0 else np.nan
     metrics_dict[f'{cond_name}_acc'] = acc_value
     metrics_dict[f'{cond_name}_rt'] = calculate_rt(df, mask_rt)
     metrics_dict[f'{cond_name}_omission_rate'] = calculate_omission_rate(df, mask_omission, total_num_trials)
@@ -847,19 +819,6 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                print(f'flanker: {flanker}')
-                print(f'task: {task}')
-                print(f'cue: {cue}')
-                print(f'df[flanker_col]: {df[flanker_col]}')
-                print(f'df.columns: {df.columns}')
-                print(f'df.head(): {df.head()}')
-                print(f'df["task_condition"].unique(): {df["task_condition"].unique()}')
-                print(f'df["cue_condition"].unique(): {df["cue_condition"].unique()}')
-                print(f'df["task_condition"] == "stay": {(df["task_condition"] == "stay").any()}')
-                print(f'df["task_condition"] == "switch": {(df["task_condition"] == "switch").any()}')
-                print(f'df["cue_condition"] == "stay": {(df["cue_condition"] == "stay").any()}')
-                print(f'df["cue_condition"] == "switch": {(df["cue_condition"] == "switch").any()}')
-                #print(f'mask_acc: {mask_acc}')
                 calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker=True)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
