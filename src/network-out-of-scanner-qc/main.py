@@ -152,6 +152,34 @@ for task in tasks:
     if task == 'flanker_with_cued_task_switching' or task == 'shape_matching_with_cued_task_switching':
         correct_columns(output_path / f"{task}_qc.csv")
     task_csv = pd.read_csv(output_path / f"{task}_qc.csv")
+    
+    # For fMRI: add condition accuracies to flagged data before exclusion check
+    if cfg.is_fmri and 'session' in task_csv.columns:
+        from utils.globals import ACC_THRESHOLD
+        from utils.exclusion_utils import append_exclusion_row, compare_to_threshold
+        condition_acc_flags = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+        if 'session' not in condition_acc_flags.columns:
+            condition_acc_flags.insert(1, 'session', pd.Series(dtype=str))
+        
+        # Get all condition accuracy columns (exclude overall_acc)
+        acc_cols = [col for col in task_csv.columns if col.endswith('_acc') and col != 'overall_acc' and 'nogo' not in col and 'stop_fail' not in col]
+        
+        for index, row in task_csv.iterrows():
+            if index >= len(task_csv) - 4:  # Skip summary rows
+                continue
+            subject_id = row['subject_id']
+            session = row['session'] if 'session' in row.index else None
+            
+            for col_name in acc_cols:
+                value = row[col_name]
+                if pd.notna(value) and compare_to_threshold(col_name, value, ACC_THRESHOLD):
+                    condition_acc_flags = append_exclusion_row(condition_acc_flags, subject_id, col_name, value, ACC_THRESHOLD, session)
+        
+        # This will be merged with other flagged data later
+        condition_acc_flags_df = condition_acc_flags
+    else:
+        condition_acc_flags_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+    
     exclusion_df = check_exclusion_criteria(task, task_csv, exclusion_df)
     
     # Create a copy for flagged data (flags that will be removed)
@@ -162,6 +190,12 @@ for task in tasks:
     
     # Flagged data contains only the flags that were removed (original - filtered)
     flagged_df = flagged_df[~flagged_df.index.isin(exclusion_df.index)]
+    
+    # For fMRI: merge condition accuracy flags into flagged data
+    if cfg.is_fmri and len(condition_acc_flags_df) > 0:
+        flagged_df = pd.concat([flagged_df, condition_acc_flags_df], ignore_index=True)
+        from utils.qc_utils import sort_subject_ids
+        flagged_df = sort_subject_ids(flagged_df)
     
     # Save both datasets
     flagged_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)

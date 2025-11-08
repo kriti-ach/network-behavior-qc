@@ -281,6 +281,9 @@ def nback_flag_omission_rates(exclusion_df, subject_id, row, load, cols, session
     return exclusion_df
 
 def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
+    # Detect if this is fMRI mode (has session column)
+    is_fmri = 'session' in task_csv.columns
+    
     for index, row in task_csv.iterrows():
         if index >= len(task_csv) - SUMMARY_ROWS:
             continue
@@ -288,16 +291,24 @@ def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
         session = row['session'] if 'session' in row.index else None
         
         # Get all accuracy and omission rate columns
-        acc_cols = [col for col in task_csv.columns if 'acc' in col and 'nogo' not in col and 'stop_fail' not in col]
+        acc_cols = [col for col in task_csv.columns if 'acc' in col and 'nogo' not in col and 'stop_fail' not in col and col != 'overall_acc']
         omission_rate_cols = [col for col in task_csv.columns if 'omission_rate' in col]
         
         # If this task includes N-back, let N-back rules handle accuracy; still apply other tasks' omission rules
         if 'n_back' not in task_name:
-            # Check accuracy columns only if this is not an N-back task
-            for col_name in acc_cols:
-                value = row[col_name]
-                if compare_to_threshold(col_name, value, ACC_THRESHOLD):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD, session)
+            if is_fmri:
+                # For fMRI: only check overall accuracy, move condition accuracies to flagged
+                if 'overall_acc' in task_csv.columns:
+                    overall_acc = row['overall_acc']
+                    if pd.notna(overall_acc) and compare_to_threshold('overall_acc', overall_acc, ACC_THRESHOLD):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_acc', overall_acc, ACC_THRESHOLD, session)
+                # Condition accuracies will be moved to flagged data (handled in main.py)
+            else:
+                # For out-of-scanner: check individual condition accuracies
+                for col_name in acc_cols:
+                    value = row[col_name]
+                    if compare_to_threshold(col_name, value, ACC_THRESHOLD):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD, session)
         
         # Check omission rate columns (but exclude N-back specific omission rates)
         for col_name in omission_rate_cols:
