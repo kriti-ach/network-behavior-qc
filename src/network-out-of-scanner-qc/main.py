@@ -153,16 +153,20 @@ for task in tasks:
         correct_columns(output_path / f"{task}_qc.csv")
     task_csv = pd.read_csv(output_path / f"{task}_qc.csv")
     
-    # For fMRI: add condition accuracies to flagged data before exclusion check
+    # For fMRI: add condition accuracies and omission rates to flagged data before exclusion check
     if cfg.is_fmri and 'session' in task_csv.columns:
-        from utils.globals import ACC_THRESHOLD
+        from utils.globals import ACC_THRESHOLD, OMISSION_RATE_THRESHOLD, GO_OMISSION_RATE_THRESHOLD
         from utils.exclusion_utils import append_exclusion_row, compare_to_threshold
         condition_acc_flags = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+        omission_rate_flags = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
         if 'session' not in condition_acc_flags.columns:
             condition_acc_flags.insert(1, 'session', pd.Series(dtype=str))
+            omission_rate_flags.insert(1, 'session', pd.Series(dtype=str))
         
         # Get all condition accuracy columns (exclude overall_acc)
         acc_cols = [col for col in task_csv.columns if col.endswith('_acc') and col != 'overall_acc' and 'nogo' not in col and 'stop_fail' not in col]
+        # Get all omission rate columns
+        omission_rate_cols = [col for col in task_csv.columns if 'omission_rate' in col]
         
         for index, row in task_csv.iterrows():
             if index >= len(task_csv) - 4:  # Skip summary rows
@@ -170,15 +174,30 @@ for task in tasks:
             subject_id = row['subject_id']
             session = row['session'] if 'session' in row.index else None
             
+            # Flag condition accuracies
             for col_name in acc_cols:
                 value = row[col_name]
                 if pd.notna(value) and compare_to_threshold(col_name, value, ACC_THRESHOLD):
                     condition_acc_flags = append_exclusion_row(condition_acc_flags, subject_id, col_name, value, ACC_THRESHOLD, session)
+            
+            # Flag omission rates
+            for col_name in omission_rate_cols:
+                value = row[col_name]
+                if pd.notna(value):
+                    # Use appropriate threshold based on column name
+                    if 'go_omission_rate' in col_name:
+                        threshold = GO_OMISSION_RATE_THRESHOLD
+                    else:
+                        threshold = OMISSION_RATE_THRESHOLD
+                    if compare_to_threshold(col_name, value, threshold):
+                        omission_rate_flags = append_exclusion_row(omission_rate_flags, subject_id, col_name, value, threshold, session)
         
         # This will be merged with other flagged data later
         condition_acc_flags_df = condition_acc_flags
+        omission_rate_flags_df = omission_rate_flags
     else:
         condition_acc_flags_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
+        omission_rate_flags_df = pd.DataFrame({'subject_id': [], 'metric': [], 'metric_value': [], 'threshold': []})
     
     exclusion_df = check_exclusion_criteria(task, task_csv, exclusion_df)
     
@@ -191,11 +210,17 @@ for task in tasks:
     # Flagged data contains only the flags that were removed (original - filtered)
     flagged_df = flagged_df[~flagged_df.index.isin(exclusion_df.index)]
     
-    # For fMRI: merge condition accuracy flags into flagged data
-    if cfg.is_fmri and len(condition_acc_flags_df) > 0:
-        flagged_df = pd.concat([flagged_df, condition_acc_flags_df], ignore_index=True)
-        from utils.qc_utils import sort_subject_ids
-        flagged_df = sort_subject_ids(flagged_df)
+    # For fMRI: merge condition accuracy and omission rate flags into flagged data
+    if cfg.is_fmri:
+        flags_to_merge = []
+        if len(condition_acc_flags_df) > 0:
+            flags_to_merge.append(condition_acc_flags_df)
+        if len(omission_rate_flags_df) > 0:
+            flags_to_merge.append(omission_rate_flags_df)
+        if flags_to_merge:
+            flagged_df = pd.concat([flagged_df] + flags_to_merge, ignore_index=True)
+            from utils.qc_utils import sort_subject_ids
+            flagged_df = sort_subject_ids(flagged_df)
     
     # Save both datasets
     flagged_df.to_csv(flags_output_path / f"flagged_data_{task}.csv", index=False)

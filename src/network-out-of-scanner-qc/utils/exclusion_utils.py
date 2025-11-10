@@ -8,6 +8,7 @@ from utils.globals import (
     STOP_SUCCESS_ACC_LOW_THRESHOLD,
     STOP_SUCCESS_ACC_HIGH_THRESHOLD,
     GO_RT_THRESHOLD,
+    GO_RT_THRESHOLD_FMRI,
     GO_ACC_THRESHOLD_GO_NOGO,
     NOGO_ACC_THRESHOLD_GO_NOGO,
     GO_OMISSION_RATE_THRESHOLD,
@@ -95,6 +96,9 @@ def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, th
     return exclusion_df
 
 def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
+    # Detect if this is fMRI mode (has session column)
+    is_fmri = 'session' in task_csv.columns
+    
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
         if index >= len(task_csv) - SUMMARY_ROWS:
@@ -120,11 +124,15 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
                 if compare_to_threshold('stop_success_high', value, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
                     exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, STOP_SUCCESS_ACC_HIGH_THRESHOLD, session)
 
-            # Check go_rt columns
+            # Check go_rt columns - use fMRI threshold if in fMRI mode
             for col_name in go_rt_cols:
                 value = row[col_name]
-                if compare_to_threshold('go_rt', value, GO_RT_THRESHOLD if not is_dual_task(task_name) else GO_RT_THRESHOLD_DUAL_TASK):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, GO_RT_THRESHOLD, session)
+                if is_fmri:
+                    rt_threshold = GO_RT_THRESHOLD_FMRI
+                else:
+                    rt_threshold = GO_RT_THRESHOLD if not is_dual_task(task_name) else GO_RT_THRESHOLD_DUAL_TASK
+                if compare_to_threshold('go_rt', value, rt_threshold):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, rt_threshold, session)
 
             # Check if stop fail rt > go rt if the prefix is the same
             for col_name in stop_fail_rt_cols:
@@ -143,22 +151,27 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
                     if compare_to_threshold('go_acc', value, ACC_THRESHOLD):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD, session)
 
-            # Check go_omission_rate columns
-            for col_name in go_omission_rate_cols:
-                value = row[col_name]
-                if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD, session)
+            # Check go_omission_rate columns - skip exclusion for fMRI (will be flagged instead)
+            if not is_fmri:
+                for col_name in go_omission_rate_cols:
+                    value = row[col_name]
+                    if compare_to_threshold('go_omission_rate', value, OMISSION_RATE_THRESHOLD):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD, session)
 
     #sort by subject_id
     exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
 
 def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
+    # Detect if this is fMRI mode (has session column)
+    is_fmri = 'session' in task_csv.columns
+    
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
         if index >= len(task_csv) - SUMMARY_ROWS:
             continue
         subject_id = row['subject_id']
+        session = row['session'] if 'session' in row.index else None
 
         # Get actual column names for each metric type
         go_acc_cols = [col for col in task_csv.columns if 'go' in col and 'acc' in col and 'nogo' not in col]
@@ -175,7 +188,6 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                 
                 # Only proceed if prefixes match
                 if go_prefix == nogo_prefix:
-                    session = row['session'] if 'session' in row.index else None
                     go_acc_value = row[col_name_go]
                     nogo_acc_value = row[col_name_nogo]
                     # Check go accuracy threshold only if this is a go_nogo single task 
@@ -185,17 +197,21 @@ def check_go_nogo_exclusion_criteria(task_name, task_csv, exclusion_df):
                         if compare_to_threshold('nogo_acc', nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO):
                             exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name_nogo, nogo_acc_value, NOGO_ACC_THRESHOLD_GO_NOGO, session)
 
-        for col_name in go_omission_rate_cols:
-            session = row['session'] if 'session' in row.index else None
-            value = row[col_name]
-            if compare_to_threshold('go_omission_rate', value, GO_OMISSION_RATE_THRESHOLD):
-                exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, GO_OMISSION_RATE_THRESHOLD, session)
+        # Check go_omission_rate columns - skip exclusion for fMRI (will be flagged instead)
+        if not is_fmri:
+            for col_name in go_omission_rate_cols:
+                value = row[col_name]
+                if compare_to_threshold('go_omission_rate', value, GO_OMISSION_RATE_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, GO_OMISSION_RATE_THRESHOLD, session)
     #sort by subject_id
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
 
 def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
+    # Detect if this is fMRI mode (has session column)
+    is_fmri = 'session' in task_csv.columns
+    
     for index, row in task_csv.iterrows():
         #ignore the last 4 rows (summary rows)
         if index >= len(task_csv) - SUMMARY_ROWS:
@@ -205,14 +221,18 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
         for load in [1, 2, 3]:
             cols = nback_get_columns(task_csv, load)
             exclusion_df = nback_flag_independent_accuracy(exclusion_df, subject_id, row, load, cols, session)
-            exclusion_df = nback_flag_omission_rates(exclusion_df, subject_id, row, load, cols, session)
+            # Check omission rates - skip exclusion for fMRI (will be flagged instead)
+            if not is_fmri:
+                exclusion_df = nback_flag_omission_rates(exclusion_df, subject_id, row, load, cols, session)
+        # Check combined accuracy thresholds (once per row, not per load)
+        exclusion_df = nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv, session)
 
     #sort by subject_id
     if len(exclusion_df) != 0:
         exclusion_df = sort_subject_ids(exclusion_df)
     return exclusion_df
 
-def nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
+def nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv, session=None):
     """Flag N-back combined condition where both mismatch and match accuracies
     fall below their respective combined thresholds for a given load.
 
@@ -236,10 +256,10 @@ def nback_flag_combined_accuracy(exclusion_df, subject_id, row, task_csv):
             if pd.notna(mismatch_val) and pd.notna(match_val):
                 if (mismatch_val < MISMATCH_COMBINED_THRESHOLD) and (match_val < MATCH_COMBINED_THRESHOLD):
                     exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{mismatch_col}_combined', mismatch_val, MISMATCH_COMBINED_THRESHOLD
+                        exclusion_df, subject_id, f'{mismatch_col}_combined', mismatch_val, MISMATCH_COMBINED_THRESHOLD, session
                     )
                     exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{match_col}_combined', match_val, MATCH_COMBINED_THRESHOLD
+                        exclusion_df, subject_id, f'{match_col}_combined', match_val, MATCH_COMBINED_THRESHOLD, session
                     )
     return exclusion_df
 
@@ -311,12 +331,14 @@ def check_other_exclusion_criteria(task_name, task_csv, exclusion_df):
                         exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, ACC_THRESHOLD, session)
         
         # Check omission rate columns (but exclude N-back specific omission rates)
-        for col_name in omission_rate_cols:
-            # Skip N-back specific omission rates (they are handled by N-back exclusion criteria)
-            if 'back' not in col_name.lower():
-                value = row[col_name]
-                if compare_to_threshold(col_name, value, OMISSION_RATE_THRESHOLD):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD, session)
+        # Skip exclusion for fMRI (will be flagged instead)
+        if not is_fmri:
+            for col_name in omission_rate_cols:
+                # Skip N-back specific omission rates (they are handled by N-back exclusion criteria)
+                if 'back' not in col_name.lower():
+                    value = row[col_name]
+                    if compare_to_threshold(col_name, value, OMISSION_RATE_THRESHOLD):
+                        exclusion_df = append_exclusion_row(exclusion_df, subject_id, col_name, value, OMISSION_RATE_THRESHOLD, session)
     
     #sort by subject_id
     if len(exclusion_df) != 0:
