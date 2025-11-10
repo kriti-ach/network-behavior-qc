@@ -56,12 +56,18 @@ def compare_to_threshold(metric_name, metric_value, threshold):
 
 def append_exclusion_row(exclusion_df, subject_id, metric_name, metric_value, threshold, session=None):
     """Append a new exclusion row to the exclusion dataframe, avoiding duplicates."""
-    # Check if this subject+metric combination already exists
+    # Check if this subject+metric+session combination already exists
     if len(exclusion_df) > 0:
-        existing = exclusion_df[
-            (exclusion_df['subject_id'] == subject_id) & 
-            (exclusion_df['metric'] == metric_name)
-        ]
+        # Build duplicate check condition
+        duplicate_condition = (exclusion_df['subject_id'] == subject_id) & (exclusion_df['metric'] == metric_name)
+        
+        # If session is provided, also check session (for in-scanner data)
+        if session is not None:
+            # Ensure session column exists
+            if 'session' in exclusion_df.columns:
+                duplicate_condition = duplicate_condition & (exclusion_df['session'] == session)
+        
+        existing = exclusion_df[duplicate_condition]
         if len(existing) > 0:
             if subject_id == 's1351' and 'match_2.0back_acc_combined' in metric_name:
                 print(f"Duplicate detected for {metric_name}, skipping. Existing rows:\n{existing}")
