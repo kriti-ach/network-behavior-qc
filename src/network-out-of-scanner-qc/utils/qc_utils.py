@@ -1477,21 +1477,25 @@ def get_task_metrics(df, task_name, config):
         elif 'directed_forgetting' in task_name or 'directedForgetting' in task_name:
             conditions = {'directed_forgetting': DIRECTED_FORGETTING_CONDITIONS}
             condition_columns = {'directed_forgetting': 'directed_forgetting_condition'}
+            metrics = calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return add_overall_accuracy(metrics, df, task_name)
         elif 'flanker' in task_name:
             conditions = {'flanker': FLANKER_CONDITIONS}
             condition_columns = {'flanker': 'flanker_condition'}
+            metrics = calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return add_overall_accuracy(metrics, df, task_name)
         elif 'go_nogo' in task_name:
             conditions = {'go_nogo': GO_NOGO_CONDITIONS}
             condition_columns = {'go_nogo': 'go_nogo_condition'}
+            metrics = calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return add_overall_accuracy(metrics, df, task_name)
         elif 'shape_matching' in task_name:
             conditions = {'shape_matching': SHAPE_MATCHING_CONDITIONS}
             condition_columns = {'shape_matching': 'shape_matching_condition'}
+            metrics = calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
+            return add_overall_accuracy(metrics, df, task_name)
         else:
-            print(f"Unknown task: {task_name}")
-            return None
-    
-        metrics = calculate_metrics(df, conditions, condition_columns, is_dual_task(task_name))
-        return add_overall_accuracy(metrics)
+            raise ValueError(f"Unknown task: {task_name}")
 
 def calculate_metrics(df, conditions, condition_columns, is_dual_task, spatialts=False, shapematching=False, directedforgetting=False, gonogo=False):
     """
