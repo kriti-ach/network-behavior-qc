@@ -1,0 +1,16 @@
+"behavioral_exclusions": [
+    {
+        "subject": "sub-s1058",
+        "session": "ses-01",
+        "task": "task-nBack",
+        "run": "run-1",
+        "reason": "Behavioral exclusion"
+    },
+    {
+        "subject": "sub-s1351",
+        "session": "ses-06",
+        "task": "task-nBack",
+        "run": "run-1",
+        "reason": "Behavioral exclusion"
+    }
+]

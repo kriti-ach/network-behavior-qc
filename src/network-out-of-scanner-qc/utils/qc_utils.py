@@ -568,16 +568,23 @@ def preprocess_rt_tail_cutoff(df: pd.DataFrame, subject_id: str | None = None, s
     cutoff_iloc = df.index.get_loc(last_valid_idx)
     df_trimmed = df.iloc[:cutoff_iloc + 1].copy()
 
-    # Compute cutoff position relative to ALL rows
-    cutoff_pos = cutoff_iloc + 1  # first dropped row position in full df (0-based index within df)
-    halfway = len(df) / 2.0
-    cutoff_before_halfway = cutoff_pos < halfway
-    
-    # Calculate proportion of blank trials (rt == -1) in original dataframe
+    # Compute cutoff position relative to test trials
     test_trials = df[df['trial_id'] == 'test_trial']
     if len(test_trials) > 0:
+        # Find how many test trials are included up to and including last_valid_idx
+        # cutoff_pos is the position of the first dropped test trial (1-based)
+        test_trials_included = test_trials[test_trials.index <= last_valid_idx]
+        cutoff_pos = len(test_trials_included) + 1  # first dropped test trial position (1-based)
+        halfway = len(test_trials) / 2.0
+        cutoff_before_halfway = cutoff_pos < halfway
+        
+        # Calculate proportion of blank trials (rt == -1) in original dataframe
         proportion_blank = (test_trials['rt'] == -1).sum() / len(test_trials)
     else:
+        # No test trials, use defaults
+        cutoff_pos = cutoff_iloc + 1  # fallback to row-based calculation
+        halfway = len(df) / 2.0
+        cutoff_before_halfway = cutoff_pos < halfway
         proportion_blank = 0.0
 
     return df_trimmed, cutoff_pos, cutoff_before_halfway, proportion_blank
