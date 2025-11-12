@@ -50,11 +50,11 @@ def get_scan_time_from_bids(subject_id, session, bids_path):
     
     Returns total scan time in seconds, or None if not found.
     """
-    subject_path = bids_path / subject_id
+    subject_path = bids_path / f'sub-{subject_id}'
     if not subject_path.exists():
         return None
     
-    session_path = subject_path / session
+    session_path = subject_path / f'ses-{session}'
     if not session_path.exists():
         return None
     
@@ -116,167 +116,65 @@ def get_scan_time_from_bids(subject_id, session, bids_path):
 
 def process_trimmed_csvs():
     """
-    Process behavioral CSVs from discovery and validation BIDS paths,
-    apply trimming, and add scan time.
+    Process behavioral CSVs listed in trimmed_fmri_behavior_tasks.csv,
+    apply trimming, and add scan time from BIDS data.
     """
+    # Read the trimmed tasks CSV created by main.py
+    trimmed_tasks_file = cfg.trimmed_csv_output_path / 'trimmed_fmri_behavior_tasks.csv'
+    if not trimmed_tasks_file.exists():
+        print(f"Error: {trimmed_tasks_file} not found. Run main.py first to create it.")
+        return
+    
+    trimmed_tasks_df = pd.read_csv(trimmed_tasks_file)
+    print(f"Found {len(trimmed_tasks_df)} trimmed tasks to process")
+    
     all_trimmed_data = []
     
-    # Process discovery BIDS
-    print("Processing discovery BIDS...")
-    for subject_id in DISCOVERY_SUBJECTS:
-        subject_path = DISCOVERY_BIDS_PATH / subject_id
-        if not subject_path.exists():
-            print(f"Warning: Subject {subject_id} not found in discovery BIDS")
-            continue
+    for idx, row in trimmed_tasks_df.iterrows():
+        subject_id = row['subject_id']
+        session = row['session']
+        task_name = row['task_name']
         
-        for session_dir in subject_path.glob('ses-*'):
-            session = session_dir.name
-            print(f"Processing {subject_id} {session}...")
-            
-            # Find all CSV files in this session
-            csv_files = list(session_dir.glob('*.csv'))
-            for csv_file in csv_files:
-                if '/practice/' in str(csv_file).lower():
-                    continue
-                
-                try:
-                    # Read the CSV
-                    df = pd.read_csv(csv_file)
-                    
-                    # Infer task name
-                    task_name = infer_task_name_from_filename(csv_file.name)
-                    if not task_name:
-                        continue
-                    
-                    # Normalize flanker conditions if needed
-                    if 'flanker' in task_name and 'stop_signal' in task_name:
-                        df = normalize_flanker_conditions(df)
-                    
-                    # Apply trimming
-                    df_trimmed, cut_pos, cut_before_halfway, proportion_blank = preprocess_rt_tail_cutoff(
-                        df,
-                        subject_id=subject_id,
-                        session=session,
-                        task_name=task_name,
-                        last_n_test_trials=last_n_test_trials,
-                    )
-                    
-                    # Use trimmed dataframe
-                    df_final = df_trimmed
-                    
-                    # Get scan time from BIDS
-                    scan_time = get_scan_time_from_bids(subject_id, session, DISCOVERY_BIDS_PATH)
-                    
-                    # Add scan_time column
-                    df_final['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
-                    
-                    # Create output filename
-                    output_filename = f"{subject_id}_{session}_{task_name}_trimmed.csv"
-                    output_file = OUTPUT_PATH / output_filename
-                    
-                    # Save trimmed CSV
-                    df_final.to_csv(output_file, index=False)
-                    print(f"  Saved: {output_filename} (scan_time: {scan_time:.2f}s)" if scan_time else f"  Saved: {output_filename} (scan_time: not found)")
-                    
-                    # Record metadata
-                    all_trimmed_data.append({
-                        'subject_id': subject_id,
-                        'session': session,
-                        'task_name': task_name,
-                        'original_file': str(csv_file),
-                        'output_file': str(output_file),
-                        'scan_time_seconds': scan_time,
-                        'cutoff_index': cut_pos,
-                        'before_halfway': cut_before_halfway,
-                        'proportion_blank_trials': proportion_blank,
-                        'bids_path': 'discovery'
-                    })
-                    
-                except Exception as e:
-                    print(f"Error processing {csv_file}: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    continue
-    
-    # Process validation BIDS
-    print("\nProcessing validation BIDS...")
-    for subject_dir in VALIDATION_BIDS_PATH.glob('sub-s*'):
-        subject_id = subject_dir.name
-        if not re.match(r"s\d{2,}", subject_id):
-            continue
+        print(f"Processing {subject_id} {session} {task_name}...")
         
-        # Skip discovery subjects
+        # Determine which BIDS path to use
         if subject_id in DISCOVERY_SUBJECTS:
-            continue
+            bids_path = DISCOVERY_BIDS_PATH
+            bids_type = 'discovery'
+        else:
+            bids_path = VALIDATION_BIDS_PATH
+            bids_type = 'validation'
         
-        for session_dir in subject_dir.glob('ses-*'):
-            session = session_dir.name
-            print(f"Processing {subject_id} {session}...")
+        try:
+            # Get scan time from BIDS
+            scan_time = get_scan_time_from_bids(subject_id, session, bids_path)
             
-            # Find all CSV files in this session
-            csv_files = list(session_dir.glob('*.csv'))
-            for csv_file in csv_files:
-                if '/practice/' in str(csv_file).lower():
-                    continue
-                
-                try:
-                    # Read the CSV
-                    df = pd.read_csv(csv_file)
-                    
-                    # Infer task name
-                    task_name = infer_task_name_from_filename(csv_file.name)
-                    if not task_name:
-                        continue
-                    
-                    # Normalize flanker conditions if needed
-                    if 'flanker' in task_name and 'stop_signal' in task_name:
-                        df = normalize_flanker_conditions(df)
-                    
-                    # Apply trimming
-                    df_trimmed, cut_pos, cut_before_halfway, proportion_blank = preprocess_rt_tail_cutoff(
-                        df,
-                        subject_id=subject_id,
-                        session=session,
-                        task_name=task_name,
-                        last_n_test_trials=last_n_test_trials,
-                    )
-                    
-                    # Use trimmed dataframe
-                    df_final = df_trimmed
-                    
-                    # Get scan time from BIDS
-                    scan_time = get_scan_time_from_bids(subject_id, session, VALIDATION_BIDS_PATH)
-                    
-                    # Add scan_time column
-                    df_final['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
-                    
-                    # Create output filename
-                    output_filename = f"{subject_id}_{session}_{task_name}_trimmed.csv"
-                    output_file = OUTPUT_PATH / output_filename
-                    
-                    # Save trimmed CSV
-                    df_final.to_csv(output_file, index=False)
-                    print(f"  Saved: {output_filename} (scan_time: {scan_time:.2f}s)" if scan_time else f"  Saved: {output_filename} (scan_time: not found)")
-                    
-                    # Record metadata
-                    all_trimmed_data.append({
-                        'subject_id': subject_id,
-                        'session': session,
-                        'task_name': task_name,
-                        'original_file': str(csv_file),
-                        'output_file': str(output_file),
-                        'scan_time_seconds': scan_time,
-                        'cutoff_index': cut_pos,
-                        'before_halfway': cut_before_halfway,
-                        'proportion_blank_trials': proportion_blank,
-                        'bids_path': 'validation'
-                    })
-                    
-                except Exception as e:
-                    print(f"Error processing {csv_file}: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    continue
+            # Add scan_time column
+            trimmed_tasks_df['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
+            
+            # Create output filename
+            output_filename = f"{subject_id}_{session}_{task_name}_trimmed.csv"
+            output_file = OUTPUT_PATH / output_filename
+            
+            # Save trimmed CSV
+            trimmed_tasks_df.to_csv(output_file, index=False)
+            print(f"  Saved: {output_filename} (scan_time: {scan_time:.2f}s)" if scan_time else f"  Saved: {output_filename} (scan_time: not found)")
+            
+            # Record metadata
+            all_trimmed_data.append({
+                'subject_id': subject_id,
+                'session': session,
+                'task_name': task_name,
+                'output_file': str(output_file),
+                'scan_time_seconds': scan_time,
+                'bids_path': bids_type
+            })
+            
+        except Exception as e:
+            print(f"  Error processing {subject_id} {session} {task_name}: {e}")
+            import traceback
+            traceback.print_exc()
+            continue
     
     # Save summary CSV
     if all_trimmed_data:
