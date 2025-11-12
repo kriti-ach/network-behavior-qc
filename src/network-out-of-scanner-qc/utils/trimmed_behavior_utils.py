@@ -118,8 +118,10 @@ def get_bids_task_name(task_name: str) -> str:
     """
     Get the BIDS task name from the task name.
     """
-    if 'stop_signal' in task_name:
-        return 'stopSignal'
+    if 'stop_signal_with_directed_forgetting' in task_name:
+        return 'stopSignalWDirectedForgetting'
+    elif 'stop_signal_with_flanker' in task_name:
+        return 'stopSignalWFlanker'
     elif 'go_nogo' in task_name:
         return 'goNogo'
     elif 'shape_matching' in task_name:
@@ -134,7 +136,5 @@ def get_bids_task_name(task_name: str) -> str:
         return 'nBack'
     elif 'flanker' in task_name:
         return 'flanker'
-    elif 'stop_signal_with_directed_forgetting' in task_name:
-        return 'stopSignalWDirectedForgetting'
-    elif 'stop_signal_with_flanker' in task_name:
-        return 'stopSignalWFlanker'
+    elif 'stop_signal' in task_name:
+        return 'stopSignal'
