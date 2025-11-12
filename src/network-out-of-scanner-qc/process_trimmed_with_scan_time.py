@@ -62,17 +62,7 @@ def get_scan_time_from_bids(subject_id, session, task_name, bids_path):
         try:
             with open(json_file, 'r') as f:
                 data = json.load(f)
-                # Check for Duration field
-                if 'Duration' in data:
-                    duration = float(data['Duration'])
-                    total_duration += duration
-                # Also check for RepetitionTime and number of volumes
-                elif 'RepetitionTime' in data and 'NumVolumes' in data:
-                    tr = float(data['RepetitionTime'])
-                    n_vols = int(data['NumVolumes'])
-                    duration = tr * n_vols
-                    total_duration += duration
-                elif 'RepetitionTime' in data:
+                if 'RepetitionTime' in data:
                     # Try to get number of volumes from corresponding NIfTI file
                     nii_file = json_file.with_suffix('.nii.gz')
                     if not nii_file.exists():
