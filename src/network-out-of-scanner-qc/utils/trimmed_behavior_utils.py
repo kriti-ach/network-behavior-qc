@@ -129,7 +129,7 @@ def get_bids_task_name(task_name: str) -> str:
     elif 'spatial_task_switching' in task_name:
         return 'spatialTS'
     elif 'cued_task_switching' in task_name:
-        return 'CuedTS'
+        return 'cuedTS'
     elif 'n_back' in task_name:
         return 'nBack'
     elif 'flanker' in task_name:
