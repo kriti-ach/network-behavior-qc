@@ -62,6 +62,8 @@ def get_scan_time_from_bids(subject_id, session, bids_path):
     
     # Look for JSON sidecar files (func, beh, etc.)
     json_files = list(session_path.glob('**/*.json'))
+    print(f"Found {len(json_files)} JSON files in {session_path}")
+    print(json_files)
     for json_file in json_files:
         try:
             with open(json_file, 'r') as f:
@@ -140,34 +142,20 @@ def process_trimmed_csvs():
         # Determine which BIDS path to use
         if subject_id in DISCOVERY_SUBJECTS:
             bids_path = DISCOVERY_BIDS_PATH
-            bids_type = 'discovery'
         else:
             bids_path = VALIDATION_BIDS_PATH
-            bids_type = 'validation'
         
         try:
             # Get scan time from BIDS
             scan_time = get_scan_time_from_bids(subject_id, session, bids_path)
-            
             # Add scan_time column
             trimmed_tasks_df['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
-            
-            # Create output filename
-            output_filename = f"{subject_id}_{session}_{task_name}_trimmed.csv"
-            output_file = OUTPUT_PATH / output_filename
-            
-            # Save trimmed CSV
-            trimmed_tasks_df.to_csv(output_file, index=False)
-            print(f"  Saved: {output_filename} (scan_time: {scan_time:.2f}s)" if scan_time else f"  Saved: {output_filename} (scan_time: not found)")
-            
             # Record metadata
             all_trimmed_data.append({
                 'subject_id': subject_id,
                 'session': session,
                 'task_name': task_name,
-                'output_file': str(output_file),
                 'scan_time_seconds': scan_time,
-                'bids_path': bids_type
             })
             
         except Exception as e:
