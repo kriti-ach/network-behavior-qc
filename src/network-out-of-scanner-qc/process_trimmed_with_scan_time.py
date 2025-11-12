@@ -14,18 +14,30 @@ from pathlib import Path
 import re
 import nibabel as nib
 import numpy as np
+import sys
+import os
 
+# Add parent directory to path to import utils
+sys.path.insert(0, str(Path(__file__).parent))
 
-# Discovery subjects: s03, s10, s19, s29, s43
-DISCOVERY_SUBJECTS = ['s03', 's10', 's19', 's29', 's43']
+from utils.trimmed_behavior_utils import preprocess_rt_tail_cutoff
+from utils.qc_utils import infer_task_name_from_filename, normalize_flanker_conditions
+from utils.globals import LAST_N_TEST_TRIALS
+from utils.config import load_config
 
-# BIDS paths
-DISCOVERY_BIDS_PATH = Path('/oak/stanford/groups/russpold/data/network_grant/discovery_BIDS_20250402')
-VALIDATION_BIDS_PATH = Path('/oak/stanford/groups/russpold/data/network_grant/validation_BIDS')
+# Load config to get paths
+cfg = load_config()
 
-# Output path for trimmed CSVs
-OUTPUT_PATH = Path('/oak/stanford/groups/russpold/data/network_grant/behavioral_data/in_scanner_behavior_cut_short')
+# Get paths from config
+DISCOVERY_BIDS_PATH = cfg.discovery_bids_path
+VALIDATION_BIDS_PATH = cfg.validation_bids_path
+DISCOVERY_SUBJECTS = cfg.discovery_subjects
+OUTPUT_PATH = cfg.trimmed_csv_output_path
+
+# Create output directory if it doesn't exist
 OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
+
+last_n_test_trials = LAST_N_TEST_TRIALS
 
 
 def get_scan_time_from_bids(subject_id, session, bids_path):

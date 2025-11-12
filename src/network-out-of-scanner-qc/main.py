@@ -32,6 +32,7 @@ output_path = cfg.qc_output_folder
 flags_output_path = cfg.flags_output_folder
 exclusions_output_path = cfg.exclusions_output_folder
 violations_output_path = cfg.violations_output_folder
+trimmed_csv_output_path = cfg.trimmed_csv_output_path
 trimmed_records = []
 last_n_test_trials = LAST_N_TEST_TRIALS
 
@@ -296,5 +297,5 @@ if not cfg.is_fmri:
 # Save list of trimmed CSVs
 if len(trimmed_records) > 0:
     trimmed_df = pd.DataFrame(trimmed_records)
-    out_csv = Path('/oak/stanford/groups/russpold/data/network_grant/behavioral_data/trimmed_fmri_behavior_tasks.csv') if cfg.is_fmri else Path('/oak/stanford/groups/russpold/data/network_grant/behavioral_data/trimmed_out_of_scanner_tasks.csv')
+    out_csv = trimmed_csv_output_path / 'trimmed_fmri_behavior_tasks.csv' if cfg.is_fmri else trimmed_csv_output_path / 'trimmed_out_of_scanner_tasks.csv'
     trimmed_df.to_csv(out_csv, index=False)
