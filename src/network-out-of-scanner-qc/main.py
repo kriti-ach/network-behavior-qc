@@ -13,9 +13,9 @@ from utils.qc_utils import (
     append_summary_rows_to_csv,
     correct_columns,
     normalize_flanker_conditions,
-    preprocess_rt_tail_cutoff,
     infer_task_name_from_filename,
 )
+from utils.trimmed_behavior_utils import preprocess_rt_tail_cutoff
 from utils.violations_utils import compute_violations, aggregate_violations, plot_violations, create_violations_matrices
 from utils.globals import SINGLE_TASKS, DUAL_TASKS, LAST_N_TEST_TRIALS
 from utils.exclusion_utils import check_exclusion_criteria, remove_some_flags_for_exclusion, create_combined_exclusions_csv
