@@ -114,3 +114,27 @@ def preprocess_rt_tail_cutoff(df: pd.DataFrame, subject_id: str | None = None, s
 
     return df_trimmed, cutoff_pos, cutoff_before_halfway, proportion_blank
 
+def get_bids_task_name(task_name: str) -> str:
+    """
+    Get the BIDS task name from the task name.
+    """
+    if 'stop_signal' in task_name:
+        return 'stopSignal'
+    elif 'go_nogo' in task_name:
+        return 'goNogo'
+    elif 'shape_matching' in task_name:
+        return 'shapeMatching'
+    elif 'directed_forgetting' in task_name:
+        return 'directedForgetting'
+    elif 'spatial_task_switching' in task_name:
+        return 'spatialTS'
+    elif 'cued_task_switching' in task_name:
+        return 'CuedTS'
+    elif 'n_back' in task_name:
+        return 'nBack'
+    elif 'flanker' in task_name:
+        return 'flanker'
+    elif 'stop_signal_with_directed_forgetting' in task_name:
+        return 'stopSignalWDirectedForgetting'
+    elif 'stop_signal_with_flanker' in task_name:
+        return 'stopSignalWFlanker'

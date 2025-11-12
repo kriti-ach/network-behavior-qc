@@ -20,9 +20,7 @@ import os
 # Add parent directory to path to import utils
 sys.path.insert(0, str(Path(__file__).parent))
 
-from utils.trimmed_behavior_utils import preprocess_rt_tail_cutoff
-from utils.qc_utils import infer_task_name_from_filename, normalize_flanker_conditions
-from utils.globals import LAST_N_TEST_TRIALS
+from utils.trimmed_behavior_utils import preprocess_rt_tail_cutoff, get_bids_task_name
 from utils.config import load_config
 
 # Load config to get paths
@@ -32,15 +30,8 @@ cfg = load_config()
 DISCOVERY_BIDS_PATH = cfg.discovery_bids_path
 VALIDATION_BIDS_PATH = cfg.validation_bids_path
 DISCOVERY_SUBJECTS = cfg.discovery_subjects
-OUTPUT_PATH = cfg.trimmed_csv_output_path
 
-# Create output directory if it doesn't exist
-OUTPUT_PATH.mkdir(parents=True, exist_ok=True)
-
-last_n_test_trials = LAST_N_TEST_TRIALS
-
-
-def get_scan_time_from_bids(subject_id, session, bids_path):
+def get_scan_time_from_bids(subject_id, session, task_name, bids_path):
     """
     Get total scan time for a subject/session from BIDS data.
     
@@ -61,9 +52,9 @@ def get_scan_time_from_bids(subject_id, session, bids_path):
     total_duration = 0.0
     
     # Look for JSON sidecar files (func, beh, etc.)
-    json_files = list(session_path.glob('**/*.json'))
+    print(f"Looking for JSON files in {session_path} for task {task_name}")
+    json_files = list(session_path.glob(f'**/**task-{task_name}*_echo-2.json'))
     print(f"Found {len(json_files)} JSON files in {session_path}")
-    print(json_files)
     for json_file in json_files:
         try:
             with open(json_file, 'r') as f:
@@ -136,6 +127,8 @@ def process_trimmed_csvs():
         subject_id = row['subject_id']
         session = row['session']
         task_name = row['task_name']
+
+        task_name = get_bids_task_name(task_name)
         
         print(f"Processing {subject_id} {session} {task_name}...")
         
@@ -147,7 +140,7 @@ def process_trimmed_csvs():
         
         try:
             # Get scan time from BIDS
-            scan_time = get_scan_time_from_bids(subject_id, session, bids_path)
+            scan_time = get_scan_time_from_bids(subject_id, session, task_name, bids_path)
             # Add scan_time column
             trimmed_tasks_df['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
             # Record metadata
@@ -167,7 +160,7 @@ def process_trimmed_csvs():
     # Save summary CSV
     if all_trimmed_data:
         summary_df = pd.DataFrame(all_trimmed_data)
-        summary_file = OUTPUT_PATH / 'trimmed_csvs_summary.csv'
+        summary_file = cfg.trimmed_csv_output_path / 'trimmed_fmri_csvs_with_scan_time.csv'
         summary_df.to_csv(summary_file, index=False)
         print(f"\nSummary saved to: {summary_file}")
         print(f"Total files processed: {len(all_trimmed_data)}")
