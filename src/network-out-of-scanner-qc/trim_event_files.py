@@ -49,6 +49,7 @@ def find_event_files(subject_id, session, task_name, bids_path):
         return []
     
     # Look for event files matching the task
+    print(f"Looking for event files in {func_path} for task {task_name}")
     event_files = list(func_path.glob(f'sub-{subject_id}_{session}_task-{task_name}_run-*_events.tsv'))
     
     return event_files
