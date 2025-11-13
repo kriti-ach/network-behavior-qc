@@ -41,23 +41,17 @@ def get_scan_time_from_bids(subject_id, session, task_name, bids_path):
     
     Returns total scan time in seconds, or None if not found.
     """
-    print(f"Getting scan time for {subject_id} {session} {task_name} from {bids_path}")
     subject_path = bids_path / f'sub-{subject_id}'
     if not subject_path.exists():
         return None
-    print(f"Subject path exists: {subject_path}")
     
     session_path = subject_path / f'{session}'
     if not session_path.exists():
         return None
-    print(f"Session path exists: {session_path}")
     total_duration = 0.0
     
     # Look for JSON sidecar files (func, beh, etc.)
-    print(f"Looking for JSON files in {session_path} for task {task_name}")
     json_files = list(session_path.glob(f'func/sub-{subject_id}_{session}_task-{task_name}_run-*_echo-2_bold.json'))
-    print(f"Found {len(json_files)} JSON files in {session_path}")
-    print(json_files)
     for json_file in json_files:
         try:
             with open(json_file, 'r') as f:
@@ -71,7 +65,6 @@ def get_scan_time_from_bids(subject_id, session, task_name, bids_path):
                         try:
                             nii = nib.load(str(nii_file))
                             n_vols = nii.shape[-1] if len(nii.shape) > 3 else 1
-                            print(f"Number of volumes: {n_vols}")
                             tr = float(data['RepetitionTime'])
                             duration = tr * n_vols
                             total_duration += duration
@@ -123,8 +116,6 @@ def process_trimmed_csvs():
         task_name = row['task_name']
 
         task_name = get_bids_task_name(task_name)
-        
-        print(f"Processing {subject_id} {session} {task_name}...")
         
         # Determine which BIDS path to use
         if subject_id in DISCOVERY_SUBJECTS:
