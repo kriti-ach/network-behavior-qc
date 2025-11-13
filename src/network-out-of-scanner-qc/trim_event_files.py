@@ -49,7 +49,6 @@ def find_event_files(subject_id, session, task_name, bids_path):
         return []
     
     # Look for event files matching the task
-    print(f"Looking for event files in {func_path} for task {task_name}")
     event_files = list(func_path.glob(f'sub-{subject_id}_{session}_task-{task_name}_run-*_events.tsv'))
     
     return event_files
@@ -121,17 +120,14 @@ def process_event_files():
         else:
             bids_path = validation_bids_path
         
-        # Convert task name to BIDS format
-        bids_task_name = get_bids_task_name(task_name)
-        
         # Find event files
-        event_files = find_event_files(subject_id, session, bids_task_name, bids_path)
+        event_files = find_event_files(subject_id, session, task_name, bids_path)
         
         if not event_files:
-            print(f"No event files found for {subject_id} {session} {bids_task_name}")
+            print(f"No event files found for {subject_id} {session} {task_name}")
             continue
         
-        print(f"Processing {subject_id} {session} {bids_task_name}: {len(event_files)} event file(s)")
+        print(f"Processing {subject_id} {session} {task_name}: {len(event_files)} event file(s)")
         
         for event_file in event_files:
             try:
@@ -149,7 +145,6 @@ def process_event_files():
                 trimmed_file = TRIMMED_DIR / output_filename
                 df_trimmed.to_csv(trimmed_file, sep='\t', index=False)
                 
-                print(f"  Processed: {output_filename} (trimmed at {scan_time_seconds:.2f}s, {len(df_trimmed)} rows)")
                 processed_count += 1
                 
             except Exception as e:
