@@ -128,7 +128,7 @@ def process_trimmed_csvs():
             scan_time = get_scan_time_from_bids(subject_id, session, task_name, bids_path)
             
             # Determine final_decision
-            if (subject_id == 's384' and session == 'ses-07') or (subject_id == 's1445' and session == 'ses-11'):
+            if (subject_id == 's394' and session == 'ses-07') or (subject_id == 's1445' and session == 'ses-11'):
                 final_decision = "do not trim because subject fell asleep"
             else:
                 final_decision = 'trim'
