@@ -135,14 +135,20 @@ def process_trimmed_csvs():
         try:
             # Get scan time from BIDS
             scan_time = get_scan_time_from_bids(subject_id, session, task_name, bids_path)
-            # Add scan_time column
-            trimmed_tasks_df['scan_time_seconds'] = scan_time if scan_time is not None else np.nan
+            
+            # Determine final_decision
+            if (subject_id == 's384' and session == 'ses-07') or (subject_id == 's1445' and session == 'ses-11'):
+                final_decision = "do not trim because subject fell asleep"
+            else:
+                final_decision = 'trim'
+            
             # Record metadata
             all_trimmed_data.append({
                 'subject_id': subject_id,
                 'session': session,
                 'task_name': task_name,
                 'scan_time_seconds': scan_time,
+                'final_decision': final_decision,
             })
             
         except Exception as e:

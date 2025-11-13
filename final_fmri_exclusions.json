@@ -1,3 +1,4 @@
+{
 "behavioral_exclusions": [
     {
         "subject": "sub-s1058",
@@ -13,4 +14,127 @@
         "run": "run-1",
         "reason": "Behavioral exclusion"
     }
+],
+"trimmed_behavior": [
+    {
+        "subject": "sub-s247",
+        "session": "ses-11",
+        "task": "task-stopSignalWDirectedForgetting",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 524.48
+    },
+    {
+        "subject": "sub-s19",
+        "session": "ses-07",
+        "task": "task-stopSignal",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 342.7
+    },
+    {
+        "subject": "s19",
+        "session": "ses-09",
+        "task": "task-flanker",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 281.61
+    },
+    {
+        "subject": "s19",
+        "session": "ses-09",
+        "task": "task-stopSignal",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 552.79
+    },
+    {
+        "subject": "s19",
+        "session": "ses-09",
+        "task": "task-cuedTS",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 378.46
+    },
+    {
+        "subject": "s43",
+        "session": "ses-11",
+        "task": "task-stopSignalWDirectedForgetting",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 780.76
+    },
+    {
+        "subject": "s1058",
+        "session": "ses-02",
+        "task": "task-directedForgetting",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 302.47
+    },
+    {
+        "subject": "s1175",
+        "session": "ses-06",
+        "task": "task-spatialTS",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 385.91
+    },
+    {
+        "subject": "s1391",
+        "session": "ses-07",
+        "task": "task-shapeMatching",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 359.09
+    },
+    {
+        "subject": "s1314",
+        "session": "ses-05",
+        "task": "task-goNogo",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 400.81
+    },
+    {
+        "subject": "s956",
+        "session": "ses-04",
+        "task": "task-cuedTS",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 241.38
+    },
+    {
+        "subject": "s599",
+        "session": "ses-10",
+        "task": "task-nBack",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 648.15
+    },
+    {
+        "subject": "s1057",
+        "session": "ses-12",
+        "task": "task-stopSignalWFlanker",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 284.59
+    },
+    {
+        "subject": "s76",
+        "session": "ses-01",
+        "task": "task-stopSignal",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 470.84
+    },
+    {
+        "subject": "s874",
+        "session": "ses-06",
+        "task": "task-cuedTS",
+        "run": "run-1",
+        "reason": "Scan cut short",
+        "scan_time_seconds": 433.59
+    }
 ]
+}
