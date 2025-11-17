@@ -967,8 +967,8 @@ def compute_n_back_metrics(df, condition_list, paired_task_col=None, paired_cond
                     
                     # Pattern 3: For shapematching, might have n_back prefix
                     if shapematching:
-                        match_key3 = f"n_back_match_{load_str}_{paired_cond_lower}_acc"
-                        mismatch_key3 = f"n_back_mismatch_{load_str}_{paired_cond_lower}_acc"
+                        match_key3 = f"n_back_match_{load_str}_shape_matching_{paired_cond_lower}_acc"
+                        mismatch_key3 = f"n_back_mismatch_{load_str}_shape_matching_{paired_cond_lower}_acc"
                     else:
                         match_key3 = None
                         mismatch_key3 = None
