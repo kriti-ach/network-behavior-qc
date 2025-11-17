@@ -637,7 +637,7 @@ def add_category_accuracies(df, column_name, label_to_metric_key, metrics, stops
         else:
             metrics[metric_key] = calculate_acc(df, mask)
 
-def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_flanker=False):
+def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_flanker_in_scanner=False):
     """
     Calculate all basic metrics (acc, RT, omission rate, commission rate) for a condition.
     
@@ -651,9 +651,9 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
         None: Updates metrics_dict in place
     """
     # Use 'correct' if instructed and present; else default to 'correct_trial' then 'correct'
-    correct_col = 'correct' if cued_with_flanker else 'correct_trial'
+    correct_col = 'correct' if cued_with_flanker_in_scanner else 'correct_trial'
     
-    if cued_with_flanker:
+    if cued_with_flanker_in_scanner:
         # For cued+flanker: task_condition and cue_condition are on row N, but correct is on row N+1
         # We need to map each condition row index to the correct value from the next row position
         idx_list = list(df.index)
@@ -680,7 +680,7 @@ def calculate_basic_metrics(df, mask_acc, cond_name, metrics_dict, cued_with_fla
     
     mask_omission = mask_acc & (df['key_press'] == -1) if 'key_press' in df.columns else pd.Series([False] * len(df))
     # Commission: responded but incorrect (correct_mask == False means incorrect)
-    if cued_with_flanker:
+    if cued_with_flanker_in_scanner:
         mask_commission = mask_acc & (df['key_press'] != -1) & (~correct_mask) if 'key_press' in df.columns else pd.Series([False] * len(df))
     else:
         mask_commission = mask_acc & (df['key_press'] != -1) & (~correct_mask) if 'key_press' in df.columns else pd.Series([False] * len(df))
@@ -753,7 +753,8 @@ def compute_cued_task_switching_metrics(
     flanker_col=None,
     go_nogo_col=None,
     shape_matching_col=None,
-    directed_forgetting_col=None
+    directed_forgetting_col=None,
+    in_scanner=False
 ):
     """
     Compute metrics for cued task switching and its duals (flanker/go_nogo).
@@ -774,7 +775,7 @@ def compute_cued_task_switching_metrics(
                 mask_acc = (df['task_condition'].apply(lambda x: str(x).lower()) == task) & \
                            (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
-            elif condition_type == 'flanker':
+            elif condition_type == 'flanker' and in_scanner == True:
                 # cond format: {flanker}_t{task}_c{cue}
                 flanker, t_part = cond.split('_t')
                 task, cue = t_part.split('_c')
@@ -783,7 +784,7 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker=True)
+                calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker_in_scanner=True)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
                 go_nogo, t_part = cond.split('_t')
@@ -1213,7 +1214,7 @@ def get_task_metrics(df, task_name, config):
             return add_overall_accuracy(metrics, df, task_name)
         elif ('flanker' in task_name and 'cued_task_switching' in task_name) or ('flanker' in task_name and 'CuedTS' in task_name):
             if config.is_fmri:
-                metrics = compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS_FMRI, 'flanker', flanker_col='flanker_condition')
+                metrics = compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS_FMRI, 'flanker', flanker_col='flanker_condition', in_scanner=True)
             else:
                 metrics = compute_cued_task_switching_metrics(df, FLANKER_WITH_CUED_CONDITIONS, 'flanker', flanker_col='flanker_condition')
             return add_overall_accuracy(metrics, df, task_name)
