@@ -775,7 +775,7 @@ def compute_cued_task_switching_metrics(
                 mask_acc = (df['task_condition'].apply(lambda x: str(x).lower()) == task) & \
                            (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 calculate_basic_metrics(df, mask_acc, cond, metrics)
-            elif condition_type == 'flanker' and in_scanner == True:
+            elif condition_type == 'flanker':
                 # cond format: {flanker}_t{task}_c{cue}
                 flanker, t_part = cond.split('_t')
                 task, cue = t_part.split('_c')
@@ -784,7 +784,10 @@ def compute_cued_task_switching_metrics(
                     (df['task_condition'].apply(lambda x: str(x).lower()) == task) &
                     (df['cue_condition'].apply(lambda x: str(x).lower()) == cue)
                 )
-                calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker_in_scanner=True)
+                if in_scanner:
+                    calculate_basic_metrics(df, mask_acc, cond, metrics, cued_with_flanker_in_scanner=True)
+                else:
+                    calculate_basic_metrics(df, mask_acc, cond, metrics)
             elif condition_type == 'go_nogo':
                 # cond format: {go_nogo}_t{task}_c{cue}
                 go_nogo, t_part = cond.split('_t')
