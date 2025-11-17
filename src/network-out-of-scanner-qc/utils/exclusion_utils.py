@@ -138,17 +138,17 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
                 if pd.notna(overall_go_rt) and compare_to_threshold('overall_go_rt', overall_go_rt, GO_RT_THRESHOLD_FMRI):
                     exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_go_rt', overall_go_rt, GO_RT_THRESHOLD_FMRI, session)
             
-            # Check overall_stop_success_min (low threshold)
-            if 'overall_stop_success_min' in task_csv.columns:
-                overall_stop_success_min = row['overall_stop_success_min']
-                if pd.notna(overall_stop_success_min) and compare_to_threshold('stop_success_low', overall_stop_success_min, STOP_SUCCESS_ACC_LOW_THRESHOLD):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_stop_success_min', overall_stop_success_min, STOP_SUCCESS_ACC_LOW_THRESHOLD, session)
+            # Check overall_stop_success (low threshold)
+            if 'overall_stop_success' in task_csv.columns:
+                overall_stop_success = row['overall_stop_success']
+                if pd.notna(overall_stop_success) and compare_to_threshold('stop_success_low', overall_stop_success, STOP_SUCCESS_ACC_LOW_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_stop_success', overall_stop_success, STOP_SUCCESS_ACC_LOW_THRESHOLD, session)
             
-            # Check overall_stop_success_max (high threshold)
-            if 'overall_stop_success_max' in task_csv.columns:
-                overall_stop_success_max = row['overall_stop_success_max']
-                if pd.notna(overall_stop_success_max) and compare_to_threshold('stop_success_high', overall_stop_success_max, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_stop_success_max', overall_stop_success_max, STOP_SUCCESS_ACC_HIGH_THRESHOLD, session)
+            # Check overall_stop_success (high threshold)
+            if 'overall_stop_success' in task_csv.columns:
+                overall_stop_success = row['overall_stop_success']
+                if pd.notna(overall_stop_success) and compare_to_threshold('stop_success_high', overall_stop_success, STOP_SUCCESS_ACC_HIGH_THRESHOLD):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_stop_success', overall_stop_success, STOP_SUCCESS_ACC_HIGH_THRESHOLD, session)
             
             # Condition-specific criteria will be moved to flags (handled in main.py)
         else:

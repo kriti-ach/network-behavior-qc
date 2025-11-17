@@ -1897,11 +1897,9 @@ def compute_stop_signal_metrics(df, dual_task = False, paired_task_col=None, pai
                 metrics['overall_go_rt'] = np.nan
             
             if stop_success_values:
-                metrics['overall_stop_success_min'] = np.min(stop_success_values)
-                metrics['overall_stop_success_max'] = np.max(stop_success_values)
+                metrics['overall_stop_success'] = np.mean(stop_success_values)
             else:
-                metrics['overall_stop_success_min'] = np.nan
-                metrics['overall_stop_success_max'] = np.nan
+                metrics['overall_stop_success'] = np.nan
         
         return metrics
 
