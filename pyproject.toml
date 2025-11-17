@@ -1,7 +1,7 @@
 [project]
-name = "network-out-of-scanner-qc"
+name = "network-behavior-qc"
 version = "0.1.0"
-description = "Behavioral QC for network out-of-scanner data"
+description = "Behavioral QC for network data"
 readme = "README.md"
 authors = [
     { name = "Kriti Achyutuni", email = "kritiach@stanford.edu" }
@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-network-out-of-scanner-qc = "network-out-of-scanner-qc:main"
+network-behavior-qc = "network-behavior-qc:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -49,7 +49,7 @@ venv = '.venv'
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["network-out-of-scanner-qc"]
+packages = ["network-behavior-qc"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/network-out-of-scanner-qc"]
+packages = ["src/network-behavior-qc"]
