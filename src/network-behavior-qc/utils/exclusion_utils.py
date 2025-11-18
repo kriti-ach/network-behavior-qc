@@ -136,8 +136,9 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
             # Check overall_go_rt
             if 'overall_go_rt' in task_csv.columns:
                 overall_go_rt = row['overall_go_rt']
-                if pd.notna(overall_go_rt) and compare_to_threshold('overall_go_rt', overall_go_rt, GO_RT_THRESHOLD_FMRI):
-                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_go_rt', overall_go_rt, GO_RT_THRESHOLD_FMRI, session)
+                rt_threshold = GO_RT_THRESHOLD_FMRI_DUAL_TASK  # Use dual task threshold for fMRI dual tasks
+                if pd.notna(overall_go_rt) and compare_to_threshold('overall_go_rt', overall_go_rt, rt_threshold):
+                    exclusion_df = append_exclusion_row(exclusion_df, subject_id, 'overall_go_rt', overall_go_rt, rt_threshold, session)
             
             # Check overall_stop_success (low threshold)
             if 'overall_stop_success' in task_csv.columns:
@@ -177,7 +178,7 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
             for col_name in go_rt_cols:
                 value = row[col_name]
                 if is_fmri:
-                    rt_threshold = GO_RT_THRESHOLD_FMRI if not is_stop_dual else GO_RT_THRESHOLD_FMRI_DUAL_TASK
+                    rt_threshold = GO_RT_THRESHOLD_FMRI
                 else:
                     rt_threshold = GO_RT_THRESHOLD_OUT_OF_SCANNER if not is_stop_dual else GO_RT_THRESHOLD_OUT_OF_SCANNER_DUAL_TASK
                 if compare_to_threshold('go_rt', value, rt_threshold):
