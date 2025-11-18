@@ -307,6 +307,7 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     exclusion_df = nback_check_fmri_exclusion_criteria_dual(exclusion_df, subject_id, row, load, task_csv, session)
                 else:
                     # For single tasks: use condition-specific criteria
+                    print(f"Checking nback exclusion criteria for single task {task_name} with load {load}")
                     exclusion_df = nback_check_fmri_exclusion_criteria(exclusion_df, subject_id, row, load, task_csv, session)
             else:
                 # For out-of-scanner: use existing criteria
@@ -381,7 +382,10 @@ def nback_check_fmri_exclusion_criteria(exclusion_df, subject_id, row, load, tas
                 match_thresh_2 = NBACK_2BACK_MATCH_ACC_COMBINED_THRESHOLD_2
                 mismatch_thresh_2 = NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2
             
-            # Check both rules: (match < thresh1 AND mismatch < thresh1) OR (match < thresh2 AND mismatch < thresh2)
+            # Check both rules: (match <= thresh1 AND mismatch <= thresh1) OR (match <= thresh2 AND mismatch <= thresh2)
+            if subject_id == 's1058' and session == 'ses-01':
+                print(f"match_val: {match_val}, match_thresh_1: {match_thresh_1}, mismatch_val: {mismatch_val}, mismatch_thresh_1: {mismatch_thresh_1}")
+                print(f"match_val: {match_val}, match_thresh_2: {match_thresh_2}, mismatch_val: {mismatch_val}, mismatch_thresh_2: {mismatch_thresh_2}")
             exclude_rule1 = (match_val <= match_thresh_1) and (mismatch_val <= mismatch_thresh_1)
             exclude_rule2 = (match_val <= match_thresh_2) and (mismatch_val <= mismatch_thresh_2)
             
