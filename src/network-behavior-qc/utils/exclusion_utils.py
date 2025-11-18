@@ -307,7 +307,6 @@ def check_n_back_exclusion_criteria(task_name, task_csv, exclusion_df):
                     exclusion_df = nback_check_fmri_exclusion_criteria_dual(exclusion_df, subject_id, row, load, task_csv, session)
                 else:
                     # For single tasks: use condition-specific criteria
-                    print(f"Checking nback exclusion criteria for single task {task_name} with load {load}")
                     exclusion_df = nback_check_fmri_exclusion_criteria(exclusion_df, subject_id, row, load, task_csv, session)
             else:
                 # For out-of-scanner: use existing criteria
@@ -383,28 +382,16 @@ def nback_check_fmri_exclusion_criteria(exclusion_df, subject_id, row, load, tas
                 mismatch_thresh_2 = NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2
             
             # Check both rules: (match <= thresh1 AND mismatch <= thresh1) OR (match <= thresh2 AND mismatch <= thresh2)
-            if subject_id == 's1058' and session == 'ses-01':
-                print(f"match_val: {match_val}, match_thresh_1: {match_thresh_1}, mismatch_val: {mismatch_val}, mismatch_thresh_1: {mismatch_thresh_1}")
-                print(f"match_val: {match_val}, match_thresh_2: {match_thresh_2}, mismatch_val: {mismatch_val}, mismatch_thresh_2: {mismatch_thresh_2}")
-            exclude_rule1 = (match_val <= match_thresh_1) and (mismatch_val <= mismatch_thresh_1)
-            exclude_rule2 = (match_val <= match_thresh_2) and (mismatch_val <= mismatch_thresh_2)
+            exclude_rule1 = (match_val <= match_thresh_1) or (mismatch_val <= mismatch_thresh_1)
+            exclude_rule2 = (match_val <= match_thresh_2) or (mismatch_val <= mismatch_thresh_2)
             
-            if exclude_rule1 or exclude_rule2:
-                # Exclude based on whichever rule was triggered
-                if exclude_rule1:
-                    exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{mismatch_col}_fmri_rule1', mismatch_val, mismatch_thresh_1, session
-                    )
-                    exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{match_col}_fmri_rule1', match_val, match_thresh_1, session
-                    )
-                if exclude_rule2:
-                    exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{mismatch_col}_fmri_rule2', mismatch_val, mismatch_thresh_2, session
-                    )
-                    exclusion_df = append_exclusion_row(
-                        exclusion_df, subject_id, f'{match_col}_fmri_rule2', match_val, match_thresh_2, session
-                    )
+            if exclude_rule1 and exclude_rule2:
+                exclusion_df = append_exclusion_row(
+                    exclusion_df, subject_id, f'{mismatch_col}_fmri_rule1', mismatch_val, mismatch_thresh_1, session
+                )
+                exclusion_df = append_exclusion_row(
+                    exclusion_df, subject_id, f'{match_col}_fmri_rule1', match_val, match_thresh_1, session
+                )
     
     return exclusion_df
 
@@ -446,25 +433,16 @@ def nback_check_fmri_exclusion_criteria_dual(exclusion_df, subject_id, row, load
             mismatch_thresh_2 = NBACK_2BACK_MISMATCH_ACC_COMBINED_THRESHOLD_2
         
         # Check both rules: (match < thresh1 AND mismatch < thresh1) OR (match < thresh2 AND mismatch < thresh2)
-        exclude_rule1 = (match_val <= match_thresh_1) and (mismatch_val <= mismatch_thresh_1)
-        exclude_rule2 = (match_val <= match_thresh_2) and (mismatch_val <= mismatch_thresh_2)
+        exclude_rule1 = (match_val <= match_thresh_1) or (mismatch_val <= mismatch_thresh_1)
+        exclude_rule2 = (match_val <= match_thresh_2) or (mismatch_val <= mismatch_thresh_2)
         
-        if exclude_rule1 or exclude_rule2:
-            # Exclude based on whichever rule was triggered
-            if exclude_rule1:
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'{overall_mismatch_col}_fmri_rule1', mismatch_val, mismatch_thresh_1, session
-                )
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'{overall_match_col}_fmri_rule1', match_val, match_thresh_1, session
-                )
-            if exclude_rule2:
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'{overall_mismatch_col}_fmri_rule2', mismatch_val, mismatch_thresh_2, session
-                )
-                exclusion_df = append_exclusion_row(
-                    exclusion_df, subject_id, f'{overall_match_col}_fmri_rule2', match_val, match_thresh_2, session
-                )
+        if exclude_rule1 and exclude_rule2:
+            exclusion_df = append_exclusion_row(
+                exclusion_df, subject_id, f'{overall_mismatch_col}_fmri_rule1', mismatch_val, mismatch_thresh_1, session
+            )
+            exclusion_df = append_exclusion_row(
+                exclusion_df, subject_id, f'{overall_match_col}_fmri_rule1', match_val, match_thresh_1, session
+            )
     
     return exclusion_df
 

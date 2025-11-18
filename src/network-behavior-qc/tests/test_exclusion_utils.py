@@ -18,7 +18,7 @@ from utils.exclusion_utils import (
 from utils.globals import (
     STOP_SUCCESS_ACC_LOW_THRESHOLD,
     STOP_SUCCESS_ACC_HIGH_THRESHOLD,
-    GO_RT_THRESHOLD,
+    GO_RT_THRESHOLD_OUT_OF_SCANNER,
     GO_RT_THRESHOLD_FMRI,
     GO_ACC_THRESHOLD_GO_NOGO,
     NOGO_ACC_THRESHOLD_GO_NOGO,
@@ -32,7 +32,7 @@ def test_compare_to_threshold():
     assert compare_to_threshold('go_acc', 0.5, ACC_THRESHOLD) == (0.5 < ACC_THRESHOLD)
     assert compare_to_threshold('stop_success_low', 0.2, STOP_SUCCESS_ACC_LOW_THRESHOLD) == (0.2 < STOP_SUCCESS_ACC_LOW_THRESHOLD)
     assert compare_to_threshold('stop_success_high', 0.8, STOP_SUCCESS_ACC_HIGH_THRESHOLD) == (0.8 > STOP_SUCCESS_ACC_HIGH_THRESHOLD)
-    assert compare_to_threshold('go_rt', 2000, GO_RT_THRESHOLD) == (2000 > GO_RT_THRESHOLD)
+    assert compare_to_threshold('go_rt', 2000, GO_RT_THRESHOLD_OUT_OF_SCANNER) == (2000 > GO_RT_THRESHOLD_OUT_OF_SCANNER)
 
 
 def test_append_exclusion_row():
@@ -47,7 +47,7 @@ def test_check_stop_signal_exclusion_criteria_flags():
     # Two subjects, one with violations
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 's02', 'mean', 'std', 'max', 'min'],
-        'cued_go_rt': [GO_RT_THRESHOLD + 1, GO_RT_THRESHOLD - 1, np.nan, np.nan, np.nan, np.nan],
+        'cued_go_rt': [GO_RT_THRESHOLD_OUT_OF_SCANNER + 1, GO_RT_THRESHOLD_OUT_OF_SCANNER - 1, np.nan, np.nan, np.nan, np.nan],
         'cued_go_acc': [ACC_THRESHOLD - 0.1, ACC_THRESHOLD + 0.1, np.nan, np.nan, np.nan, np.nan],
         'cued_stop_success': [STOP_SUCCESS_ACC_LOW_THRESHOLD - 0.01, STOP_SUCCESS_ACC_HIGH_THRESHOLD - 0.01, np.nan, np.nan, np.nan, np.nan],
         'cued_go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.1, OMISSION_RATE_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
@@ -105,7 +105,7 @@ def test_check_exclusion_criteria_router():
     # Create a CSV with columns that will trigger each branch minimally
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
-        'go_rt': [GO_RT_THRESHOLD + 10, np.nan, np.nan, np.nan, np.nan],
+        'go_rt': [GO_RT_THRESHOLD_OUT_OF_SCANNER + 10, np.nan, np.nan, np.nan, np.nan],
         'go_acc': [ACC_THRESHOLD - 0.1, np.nan, np.nan, np.nan, np.nan],
         'stop_success': [STOP_SUCCESS_ACC_LOW_THRESHOLD - 0.01, np.nan, np.nan, np.nan, np.nan],
         'go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],
@@ -144,7 +144,7 @@ def test_nback_dual_ignores_non_nback_accuracy_and_checks_others():
     # Task includes n_back; accuracy should be driven by n-back only, but other metrics (e.g., omission) still apply                                                                                              
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
-        'go_rt': [GO_RT_THRESHOLD + 10, np.nan, np.nan, np.nan, np.nan],
+        'go_rt': [GO_RT_THRESHOLD_OUT_OF_SCANNER + 10, np.nan, np.nan, np.nan, np.nan],
         'go_acc': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be ignored due to n_back                                                                                                       
         'go_omission_rate': [OMISSION_RATE_THRESHOLD + 0.2, np.nan, np.nan, np.nan, np.nan],  # Should be checked                                                                                                 
         'mismatch_1.0back_acc_cstay': [ACC_THRESHOLD - 0.2, np.nan, np.nan, np.nan, np.nan],
@@ -396,7 +396,7 @@ def test_create_combined_exclusions_csv(tmp_path):
         'subject_id': ['s01', 's02'],
         'metric': ['go_acc', 'go_rt'],
         'metric_value': [0.4, 1000],
-        'threshold': [ACC_THRESHOLD, GO_RT_THRESHOLD]
+        'threshold': [ACC_THRESHOLD, GO_RT_THRESHOLD_OUT_OF_SCANNER]
     })
     task1_exclusions.to_csv(exclusions_output_path / 'excluded_data_flanker.csv', index=False)
     
