@@ -9,6 +9,7 @@ from utils.globals import (
     STOP_SUCCESS_ACC_HIGH_THRESHOLD,
     GO_RT_THRESHOLD,
     GO_RT_THRESHOLD_FMRI,
+    GO_RT_THRESHOLD_FMRI_DUAL_TASK,
     GO_ACC_THRESHOLD_GO_NOGO,
     NOGO_ACC_THRESHOLD_GO_NOGO,
     GO_OMISSION_RATE_THRESHOLD,
@@ -176,7 +177,7 @@ def check_stop_signal_exclusion_criteria(task_name, task_csv, exclusion_df):
             for col_name in go_rt_cols:
                 value = row[col_name]
                 if is_fmri:
-                    rt_threshold = GO_RT_THRESHOLD_FMRI
+                    rt_threshold = GO_RT_THRESHOLD_FMRI if not is_dual_task(task_name) else GO_RT_THRESHOLD_FMRI_DUAL_TASK
                 else:
                     rt_threshold = GO_RT_THRESHOLD if not is_dual_task(task_name) else GO_RT_THRESHOLD_DUAL_TASK
                 if compare_to_threshold('go_rt', value, rt_threshold):
