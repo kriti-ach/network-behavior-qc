@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.qc_utils import initialize_qc_csvs, update_qc_csv
+from network_behavior_qc.qc_utils import initialize_qc_csvs, update_qc_csv
 from pathlib import Path
 import tempfile
 

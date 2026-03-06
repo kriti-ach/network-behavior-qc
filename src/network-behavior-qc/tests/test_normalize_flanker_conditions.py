@@ -1,5 +1,5 @@
 import pandas as pd
-from utils.qc_utils import normalize_flanker_conditions
+from network_behavior_qc.qc_utils import normalize_flanker_conditions
 
 def test_normalize_flanker_conditions():
     """Test flanker condition normalization."""

@@ -39,17 +39,17 @@ The main script can be run in two modes:
 
 **For fMRI (in-scanner) data:**
 ```bash
-uv run src/network-behavior-qc/main.py --mode=fmri
+uv run scripts/run_qc.py --mode=fmri
 ```
 
 **For out-of-scanner data:**
 ```bash
-uv run src/network-behavior-qc/main.py --mode=out_of_scanner
+uv run scripts/run_qc.py --mode=out_of_scanner
 ```
 
 ### Configuration
 
-The pipeline uses configuration settings defined in `src/network-behavior-qc/utils/config.py`. This includes:
+The pipeline uses configuration settings defined in `src/network_behavior_qc/config.py`. This includes:
 - Input and output folder paths
 - BIDS data paths (for fMRI mode)
 - Task discovery and processing settings
@@ -73,27 +73,26 @@ The pipeline supports all combinations of the above single tasks, including:
 - Flanker with Cued Task Switching
 - Stop Signal with Go/No-Go
 - N-Back with various tasks
-- And many more combinations (see `utils/globals.py` for complete list)
+- And many more combinations (see `network_behavior_qc/globals.py` for complete list)
 
 ## Repository Structure
 
 ```
 network-behavior-qc/
+├── scripts/
+│   ├── run_qc.py
+│   ├── process_trimmed_with_scan_time.py
+│   └── trim_event_files.py
 ├── src/
-│   └── network-behavior-qc/
+│   ├── network_behavior_qc/
 │       ├── __init__.py
-│       ├── main.py                    # Main QC processing script
-│       ├── process_trimmed_with_scan_time.py
-│       ├── trim_event_files.py
-│       ├── utils/
-│       │   ├── __init__.py
-│       │   ├── config.py              # Configuration and path settings
-│       │   ├── exclusion_utils.py     # Exclusion criteria checking
-│       │   ├── globals.py             # Task names, conditions, thresholds
-│       │   ├── qc_utils.py            # Core QC metric computation
-│       │   ├── trimmed_behavior_utils.py  # RT tail cutoff preprocessing
-│       │   └── violations_utils.py    # Stop signal violation analysis
-│       └── tests/                     # Unit tests
+│       ├── config.py
+│       ├── exclusion_utils.py
+│       ├── globals.py
+│       ├── qc_utils.py
+│       ├── trimmed_behavior_utils.py
+│       └── violations_utils.py
+│   └── network-behavior-qc/tests/     # Unit tests
 │           ├── test_basic_metrics.py
 │           ├── test_csv_operations.py
 │           ├── test_cued_task_switching_metrics.py
@@ -148,7 +147,7 @@ Task-specific exclusion criteria are applied based on performance thresholds:
 - Stop signal success rate thresholds
 - Go RT thresholds
 
-See `utils/globals.py` for specific threshold values.
+See `network_behavior_qc/globals.py` for specific threshold values.
 
 ### Condition-Specific Metrics
 Metrics are computed separately for each experimental condition (e.g., congruent/incongruent for Flanker, go/nogo for Go/No-Go tasks).

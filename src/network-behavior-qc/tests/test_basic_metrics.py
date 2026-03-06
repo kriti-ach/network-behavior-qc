@@ -4,7 +4,7 @@ import pytest
 import sys
 import os
 
-from utils.qc_utils import (
+from network_behavior_qc.qc_utils import (
     calculate_acc, calculate_rt, calculate_omission_rate,
     calculate_commission_rate, calculate_basic_metrics
 )

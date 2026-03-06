@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from utils.qc_utils import (
+from network_behavior_qc.qc_utils import (
     calculate_single_stop_signal_metrics,
     calculate_stop_signal_ssd_stats,
     calculate_dual_stop_signal_condition_metrics,

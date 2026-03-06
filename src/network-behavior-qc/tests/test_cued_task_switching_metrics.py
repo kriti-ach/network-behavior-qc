@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from utils.qc_utils import (
+from network_behavior_qc.qc_utils import (
     compute_cued_task_switching_metrics,
 ) 
 

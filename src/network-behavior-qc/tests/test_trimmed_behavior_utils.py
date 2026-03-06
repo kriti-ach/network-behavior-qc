@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from utils.trimmed_behavior_utils import preprocess_rt_tail_cutoff, get_bids_task_name
+from network_behavior_qc.trimmed_behavior_utils import preprocess_rt_tail_cutoff, get_bids_task_name
 
 
 def test_preprocess_rt_tail_cutoff_no_trimming_needed():

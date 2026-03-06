@@ -24,7 +24,7 @@ dev = [
 ]
 
 [project.scripts]
-network-behavior-qc = "network-behavior-qc:main"
+network-behavior-qc = "scripts.run_qc:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -40,7 +40,8 @@ quote-style = "single"
 extend-select = ["E501", "W", "N", "R", "I"]
 
 [tool.pytest.ini_options]
-testpaths=['tests']
+pythonpath = ["src"]
+testpaths = ["src/network-behavior-qc/tests"]
 
 [tool.pyright]
 exclude = ['.venv']
@@ -49,7 +50,7 @@ venv = '.venv'
 
 [tool.setuptools]
 package-dir = {"" = "src"}
-packages = ["network-behavior-qc"]
+packages = ["network_behavior_qc"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/network-behavior-qc"]
+packages = ["src/network_behavior_qc"]

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from utils.exclusion_utils import (
+from network_behavior_qc.exclusion_utils import (
     compare_to_threshold,
     append_exclusion_row,
     check_stop_signal_exclusion_criteria,
@@ -15,7 +15,7 @@ from utils.exclusion_utils import (
     create_combined_exclusions_csv,
     flag_fmri_condition_metrics,
 )
-from utils.globals import (
+from network_behavior_qc.globals import (
     STOP_SUCCESS_ACC_LOW_THRESHOLD,
     STOP_SUCCESS_ACC_HIGH_THRESHOLD,
     GO_RT_THRESHOLD_OUT_OF_SCANNER,
@@ -282,7 +282,7 @@ def test_check_stop_signal_exclusion_criteria_fmri_mode():
 
 def test_check_go_nogo_exclusion_criteria_fmri_mode():
     """Test go/nogo exclusion criteria in fMRI mode with new rules."""
-    from utils.globals import GONOGO_GO_ACC_THRESHOLD_1, GONOGO_NOGO_ACC_THRESHOLD_1, GONOGO_GO_ACC_THRESHOLD_2, GONOGO_NOGO_ACC_THRESHOLD_2
+    from network_behavior_qc.globals import GONOGO_GO_ACC_THRESHOLD_1, GONOGO_NOGO_ACC_THRESHOLD_1, GONOGO_GO_ACC_THRESHOLD_2, GONOGO_NOGO_ACC_THRESHOLD_2
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 's02', 'mean', 'std', 'max', 'min'],
         'session': ['ses-01', 'ses-01', '', '', '', ''],
@@ -298,7 +298,7 @@ def test_check_go_nogo_exclusion_criteria_fmri_mode():
 
 def test_check_n_back_exclusion_criteria_fmri_single():
     """Test n-back exclusion criteria for fMRI single task."""
-    from utils.globals import NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
+    from network_behavior_qc.globals import NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
         'session': ['ses-01', '', '', '', ''],
@@ -313,7 +313,7 @@ def test_check_n_back_exclusion_criteria_fmri_single():
 
 def test_check_n_back_exclusion_criteria_fmri_dual():
     """Test n-back exclusion criteria for fMRI dual task."""
-    from utils.globals import NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
+    from network_behavior_qc.globals import NBACK_1BACK_MATCH_ACC_COMBINED_THRESHOLD_1, NBACK_1BACK_MISMATCH_ACC_COMBINED_THRESHOLD_1
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
         'session': ['ses-01', '', '', '', ''],
@@ -359,7 +359,7 @@ def test_flag_fmri_condition_metrics():
 
 def test_flag_fmri_condition_metrics_nback():
     """Test flag_fmri_condition_metrics for n-back tasks."""
-    from utils.globals import MATCH_THRESHOLD, MISMATCH_THRESHOLD
+    from network_behavior_qc.globals import MATCH_THRESHOLD, MISMATCH_THRESHOLD
     task_csv = pd.DataFrame({
         'subject_id': ['s01', 'mean', 'std', 'max', 'min'],
         'session': ['ses-01', '', '', '', ''],

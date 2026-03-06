@@ -3,7 +3,7 @@ import numpy as np
 from pathlib import Path
 import pytest
 
-from utils.violations_utils import (
+from network_behavior_qc.violations_utils import (
     check_violation_conditions,
     find_difference,
     get_ssd,
@@ -13,7 +13,7 @@ from utils.violations_utils import (
     create_violations_matrices,
     plot_violations,
 )
-from utils.qc_utils import normalize_flanker_conditions, get_task_metrics
+from network_behavior_qc.qc_utils import normalize_flanker_conditions, get_task_metrics
 
 
 def test_small_helpers():
