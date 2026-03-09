@@ -92,7 +92,7 @@ network-behavior-qc/
 │       ├── qc_utils.py
 │       ├── trimmed_behavior_utils.py
 │       └── violations_utils.py
-│   └── network-behavior-qc/tests/     # Unit tests
+│   └── ../tests/                      # Unit tests
 │           ├── test_basic_metrics.py
 │           ├── test_csv_operations.py
 │           ├── test_cued_task_switching_metrics.py
@@ -159,7 +159,7 @@ Run the test suite using:
 uv run pytest
 ```
 
-Tests are located in `src/network-behavior-qc/tests/` and cover:
+Tests are located in `tests/` and cover:
 - Basic metric computations
 - CSV operations
 - Task-specific metric calculations

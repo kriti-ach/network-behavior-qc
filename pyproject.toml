@@ -41,7 +41,7 @@ extend-select = ["E501", "W", "N", "R", "I"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-testpaths = ["src/network-behavior-qc/tests"]
+testpaths = ["tests"]
 
 [tool.pyright]
 exclude = ['.venv']
