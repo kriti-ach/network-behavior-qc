@@ -44,10 +44,10 @@ def load_config() -> PathConfig:
     if mode == "fmri":
         # In-scanner (fMRI) behavior: cleaned CSVs per session under raw_cleaned/s*/ses-*/
         input_folder = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/raw_cleaned")
-        qc_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/fmri_behavior_qc_by_task/")
-        flags_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/fmri_behavior_flags/")
-        exclusions_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/fmri_behavior_exclusions/")
-        violations_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/fmri_behavior_violations/")
+        qc_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/fmri_behavior_qc_by_task/")
+        flags_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/fmri_behavior_flags/")
+        exclusions_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/fmri_behavior_exclusions/")
+        violations_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/fmri_behavior_violations/")
         return PathConfig(
             input_folder=input_folder,
             qc_output_folder=qc_output,
@@ -65,10 +65,10 @@ def load_config() -> PathConfig:
 
     # Default: out-of-scanner behavior
     input_folder = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner")
-    qc_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_qc")
-    flags_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_flags")
-    exclusions_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_exclusions")
-    violations_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavioral_data/out_of_scanner_violations")
+    qc_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/out_of_scanner_qc")
+    flags_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/out_of_scanner_flags")
+    exclusions_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/out_of_scanner_exclusions")
+    violations_output = Path("/oak/stanford/groups/russpold/data/network_grant/behavior_qc/out_of_scanner_violations")
     return PathConfig(
         input_folder=input_folder,
         qc_output_folder=qc_output,
